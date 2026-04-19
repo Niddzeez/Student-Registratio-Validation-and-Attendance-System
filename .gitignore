@@ -1,0 +1,53 @@
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+
+*.log
+
+# Build / temp files
+
+*.out
+*.exe
+*.o
+*.obj
+
+# Database / SQL temp
+
+*.db
+*.sqlite
+*.sqlite3
+
+# Oracle / SQL Developer junk
+
+*.dmp
+*.ctl
+*.bad
+*.lst
+
+# Environment files
+
+.env
+
+# Node (if frontend exists)
+
+node_modules/
+
+# Python (if scripts used)
+
+**pycache**/
+*.pyc
+
+# Misc
+
+*.bak
+*.tmp

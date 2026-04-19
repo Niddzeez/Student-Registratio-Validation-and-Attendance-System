@@ -1,0 +1,3400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AcadMS — Academic Management System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:        #0a0c12;
+  --surface:   #12151e;
+  --surface2:  #1a1f2e;
+  --border:    #252b3b;
+  --border2:   #2e3650;
+  --accent:    #4f7cff;
+  --accent2:   #7c5cff;
+  --green:     #22c55e;
+  --yellow:    #f59e0b;
+  --red:       #ef4444;
+  --text:      #e8eaf0;
+  --muted:     #7a8299;
+  --card-glow: 0 0 0 1px var(--border), 0 4px 24px rgba(0,0,0,0.4);
+  --radius:    12px;
+  --font:      'Space Grotesk', sans-serif;
+  --mono:      'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app-shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0;
+}
+
+.sidebar-logo {
+  padding: 0 24px 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-logo .wordmark {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.sidebar-logo .tagline { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+
+.sidebar-role-badge {
+  margin: 0 16px 16px; padding: 6px 12px;
+  background: rgba(79,124,255,0.1); border: 1px solid rgba(79,124,255,0.2);
+  border-radius: 6px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-family: var(--mono);
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 24px; cursor: pointer; font-size: 14px; font-weight: 500;
+  color: var(--muted); border-left: 3px solid transparent;
+  transition: all 0.15s; user-select: none;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-item.active { color: var(--accent); background: rgba(79,124,255,0.07); border-left-color: var(--accent); }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+.sidebar-spacer { flex: 1; }
+
+.sidebar-user { padding: 16px 24px 0; border-top: 1px solid var(--border); }
+.sidebar-user .name { font-size: 13px; font-weight: 600; }
+.sidebar-user .id-tag { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+.logout-btn {
+  margin-top: 10px; padding: 7px 12px; background: transparent;
+  border: 1px solid var(--border2); border-radius: 6px; color: var(--muted);
+  font-size: 12px; cursor: pointer; font-family: var(--font); width: 100%;
+  text-align: left; transition: all 0.15s;
+}
+.logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+.main-content { flex: 1; overflow-y: auto; padding: 32px; background: var(--bg); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--card-glow); }
+.card-sm { padding: 16px; }
+.card-grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+.page-header { margin-bottom: 28px; }
+.page-title { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.page-sub   { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+.stat-tile { display: flex; flex-direction: column; gap: 8px; }
+.stat-label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-value { font-size: 32px; font-weight: 700; line-height: 1; font-family: var(--mono); }
+.stat-sub   { font-size: 12px; color: var(--muted); }
+
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted);
+  border-bottom: 1px solid var(--border); background: var(--surface2);
+}
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+.badge {
+  display: inline-flex; align-items: center; padding: 3px 9px;
+  border-radius: 20px; font-size: 11px; font-weight: 600;
+  white-space: nowrap; font-family: var(--mono);
+}
+.badge-green  { background: rgba(34,197,94,0.12);  color: var(--green); }
+.badge-yellow { background: rgba(245,158,11,0.12); color: var(--yellow); }
+.badge-red    { background: rgba(239,68,68,0.12);  color: var(--red); }
+.badge-blue   { background: rgba(79,124,255,0.12); color: var(--accent); }
+.badge-gray   { background: rgba(122,130,153,0.15);color: var(--muted); }
+.badge-purple { background: rgba(124,92,255,0.12); color: var(--accent2); }
+
+.prog-wrap { display: flex; align-items: center; gap: 10px; }
+.prog-bar  { flex: 1; height: 6px; background: var(--border2); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+.prog-label { font-size: 12px; font-family: var(--mono); font-weight: 500; min-width: 38px; text-align: right; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: var(--font); transition: all 0.15s; white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #3d6aee; }
+.btn-danger  { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+.btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border2); }
+.btn-ghost:hover { color: var(--text); border-color: var(--border2); background: rgba(255,255,255,0.04); }
+.btn-warn    { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+.btn-warn:hover { background: rgba(239,68,68,0.22); }
+.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Admin stat cards */
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; }
+.stat-value { font-size: 32px; font-weight: 700; font-family: var(--mono); letter-spacing: -1px; }
+.stat-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+.stat-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+input, select, textarea {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text); padding: 9px 12px;
+  font-size: 13px; font-family: var(--font); outline: none;
+  width: 100%; transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+select option { background: var(--surface2); }
+
+.alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+}
+.alert-warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); color: var(--yellow); }
+.alert-err  { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.25);  color: var(--red); }
+.alert-info { background: rgba(79,124,255,0.1); border: 1px solid rgba(79,124,255,0.25); color: var(--accent); }
+.alert-ok   { background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.25);  color: var(--green); }
+
+.login-shell { min-height: 100vh; display: grid; place-items: center; background: var(--bg); }
+.login-panel {
+  width: 380px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 40px; box-shadow: 0 0 80px rgba(79,124,255,0.08);
+}
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo .big { font-size: 32px; font-weight: 700; letter-spacing: -1px; background: linear-gradient(135deg,var(--accent),var(--accent2)); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.login-logo .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+.role-toggle { display: flex; gap: 8px; margin-bottom: 24px; }
+.role-btn {
+  flex: 1; padding: 9px; border-radius: 8px; border: 1px solid var(--border2);
+  background: transparent; color: var(--muted); cursor: pointer; font-family: var(--font);
+  font-size: 13px; font-weight: 600; transition: all 0.15s;
+}
+.role-btn.active { background: rgba(79,124,255,0.15); border-color: var(--accent); color: var(--accent); }
+
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-size: 16px; font-weight: 600; }
+
+.flex { display: flex; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.gap-8 { gap: 8px; }
+.gap-16 { gap: 16px; }
+.gap-24 { gap: 24px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mb-16 { margin-bottom: 16px; }
+.text-muted { color: var(--muted); font-size: 13px; }
+.text-center { text-align: center; }
+.mono { font-family: var(--mono); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 24px; height: 24px; border: 2px solid var(--border2);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.7s linear infinite; display: inline-block;
+}
+
+.chart-wrap { margin-top: 16px; }
+
+.att-grid {
+  display: grid; gap: 2px;
+  grid-template-columns: repeat(auto-fill, minmax(28px, 28px));
+}
+.att-cell {
+  width: 28px; height: 28px; border-radius: 4px;
+  display: grid; place-items: center;
+  font-size: 9px; font-weight: 700; font-family: var(--mono); cursor: default;
+}
+
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.tab-btn {
+  padding: 10px 20px; border: none; background: transparent;
+  color: var(--muted); font-family: var(--font); font-size: 13px;
+  font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: all 0.15s;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover { color: var(--text); }
+
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.info-row { display: flex; gap: 8px; font-size: 13px; margin-bottom: 6px; }
+.info-row .lbl { color: var(--muted); min-width: 140px; }
+.info-row .val { font-weight: 500; }
+
+/* ── Term banners ─────────────────────────────────────────────────── */
+.term-banner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; border-radius: 8px; font-size: 13px;
+  margin-bottom: 20px; font-weight: 500;
+}
+.term-banner.active   { background: rgba(34,197,94,0.08);  border:1px solid rgba(34,197,94,0.2);  color: var(--green);  }
+.term-banner.upcoming { background: rgba(79,124,255,0.08); border:1px solid rgba(79,124,255,0.2); color: var(--accent); }
+.term-banner .term-dot { width:8px;height:8px;border-radius:50%;display:inline-block;background:currentColor; }
+
+/* ── Section grouping headers ─────────────────────────────────────── */
+.term-group-head {
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.09em; color:var(--muted); padding: 12px 0 6px;
+  border-bottom:1px solid var(--border); margin-bottom:8px;
+}
+.term-group-head.active   { color:var(--green);  border-color:rgba(34,197,94,0.3);  }
+.term-group-head.upcoming { color:var(--accent); border-color:rgba(79,124,255,0.3); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const { useState, useEffect, useCallback, useRef } = React;
+const {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  RadialBarChart, RadialBar, PieChart, Pie, Cell, ResponsiveContainer,
+} = Recharts;
+
+// ─────────────────────────────────────────────────────────────────
+// API CLIENT
+// ─────────────────────────────────────────────────────────────────
+const BASE = 'http://localhost:8000/api';
+
+async function apiFetch(path, opts = {}) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(BASE + path, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+    },
+    ...opts,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AUTH STATE
+// ─────────────────────────────────────────────────────────────────
+let _authListeners = [];
+let _auth = (() => {
+  try { const s = localStorage.getItem('auth'); return s ? JSON.parse(s) : null; }
+  catch { return null; }
+})();
+
+function getAuth() { return _auth; }
+function setAuth(a) {
+  _auth = a;
+  if (a) {
+    localStorage.setItem('auth', JSON.stringify(a));
+    localStorage.setItem('token', a.access_token);
+  } else {
+    localStorage.removeItem('auth');
+    localStorage.removeItem('token');
+  }
+  _authListeners.forEach(fn => fn(a));
+}
+
+function useAuth() {
+  const [auth, setLocalAuth] = useState(_auth);
+  useEffect(() => {
+    _authListeners.push(setLocalAuth);
+    return () => { _authListeners = _authListeners.filter(f => f !== setLocalAuth); };
+  }, []);
+  return [auth, setAuth];
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SHARED HELPERS
+// ─────────────────────────────────────────────────────────────────
+function pctColor(pct) {
+  if (pct === null || pct === undefined) return 'var(--muted)';
+  if (pct >= 85) return 'var(--green)';
+  if (pct >= 75) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function PctBar({ pct }) {
+  const p = pct || 0;
+  return React.createElement('div', { className: 'prog-wrap' },
+    React.createElement('div', { className: 'prog-bar' },
+      React.createElement('div', { className: 'prog-fill', style: { width: p + '%', background: pctColor(p) } })
+    ),
+    React.createElement('span', { className: 'prog-label', style: { color: pctColor(p) } }, p.toFixed(1) + '%')
+  );
+}
+
+function Badge({ type, children }) {
+  return React.createElement('span', { className: `badge badge-${type}` }, children);
+}
+
+// FIX: registration_status badge — covers all values from the CHECK constraint
+function statusBadge(s) {
+  const map = {
+    REGISTERED: 'green', APPROVED: 'green', COMPLETED: 'blue',
+    WAITLISTED: 'yellow', PENDING: 'yellow',
+    DROPPED: 'gray', WITHDRAWN: 'gray',
+  };
+  return React.createElement(Badge, { type: map[s] || 'gray' }, s);
+}
+
+// FIX: demand_status badge — now covers UPCOMING and CLOSED (added in 3NF views)
+function demandBadge(s) {
+  const map = {
+    AVAILABLE:    'green',
+    FILLING_FAST: 'yellow',
+    FULL:         'red',
+    HIGH_DEMAND:  'red',
+    DATA_ERROR:   'gray',
+    UPCOMING:     'blue',    // registration window not yet open
+    CLOSED:       'gray',    // registration window has ended
+  };
+  return React.createElement(Badge, { type: map[s] || 'gray' }, (s || '').replace(/_/g, ' '));
+}
+
+function Spinner() {
+  return React.createElement('div', { style: { display: 'flex', justifyContent: 'center', padding: 40 } },
+    React.createElement('div', { className: 'spinner' })
+  );
+}
+
+function useData(fetchFn, deps = []) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const load = useCallback(async () => {
+    setLoading(true); setError(null);
+    try { setData(await fetchFn()); }
+    catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }, deps);
+  useEffect(() => { load(); }, [load]);
+  return { data, loading, error, reload: load };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// LOGIN PAGE
+// ─────────────────────────────────────────────────────────────────
+function LoginPage() {
+  const [, setAuthState] = useAuth();
+  const [role, setRole] = useState('student');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setLoading(true); setErr('');
+    try {
+      const path = role === 'admin' ? '/admin/login' : '/auth/login';
+      const body = role === 'admin'
+        ? JSON.stringify({ username, password })
+        : JSON.stringify({ username, password, role });
+      const data = await apiFetch(path, { method: 'POST', body });
+      setAuthState(data);
+    } catch (e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  return React.createElement('div', { className: 'login-shell' },
+    React.createElement('div', { className: 'login-panel' },
+      React.createElement('div', { className: 'login-logo' },
+        React.createElement('div', { className: 'big' }, 'AcadMS'),
+        React.createElement('div', { className: 'sub' }, 'Academic Management System'),
+      ),
+      React.createElement('div', { className: 'role-toggle' },
+        ['student','faculty','admin'].map(r =>
+          React.createElement('button', {
+            key: r, className: `role-btn ${role === r ? 'active' : ''}`,
+            onClick: () => setRole(r),
+          }, r === 'student' ? '👨‍🎓 Student' : r === 'faculty' ? '👨‍🏫 Faculty' : '🔐 Admin')
+        )
+      ),
+      err && React.createElement('div', { className: 'alert alert-err', style:{marginBottom:16} }, '⚠ ' + err),
+      React.createElement('form', { onSubmit: handleLogin },
+        React.createElement('div', { className: 'form-group' },
+          React.createElement('label', null, role === 'student' ? 'Roll Number' : role === 'faculty' ? 'Employee ID' : 'Username'),
+          React.createElement('input', {
+            value: username, onChange: e => setUsername(e.target.value),
+            placeholder: role === 'student' ? 'e.g. CS21001' : role === 'faculty' ? 'e.g. FAC001' : 'e.g. admin', required: true,
+          })
+        ),
+        React.createElement('div', { className: 'form-group' },
+          React.createElement('label', null, 'Password'),
+          React.createElement('input', {
+            type: 'password', value: password,
+            onChange: e => setPassword(e.target.value),
+            placeholder: 'Enter password', required: true,
+          })
+        ),
+        React.createElement('button', {
+          className: 'btn btn-primary',
+          style: { width: '100%', justifyContent: 'center', marginTop: 8 },
+          type: 'submit', disabled: loading,
+        }, loading ? 'Signing in…' : 'Sign In →'),
+      ),
+      React.createElement('p', { style: { marginTop: 20, fontSize: 11, color: 'var(--muted)', textAlign: 'center' } },
+        'Demo: password = your username'
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SIDEBAR
+// ─────────────────────────────────────────────────────────────────
+const STUDENT_PAGES = [
+  { id: 'dashboard',    icon: '◈', label: 'Dashboard' },
+  { id: 'registration', icon: '✦', label: 'Course Registration' },
+  { id: 'attendance',   icon: '◉', label: 'My Attendance' },
+  { id: 'timetable',    icon: '▦', label: 'Timetable' },
+];
+const FACULTY_PAGES = [
+  { id: 'dashboard',       icon: '◈', label: 'Dashboard' },
+  { id: 'sections',        icon: '▦', label: 'My Sections' },
+  { id: 'float-section',   icon: '⊕', label: 'Float Section' },
+  { id: 'attendance-mgmt', icon: '◉', label: 'Mark Attendance' },
+  { id: 'schedule',        icon: '◷', label: 'Class Schedule' },
+  { id: 'reports',         icon: '▤', label: 'Reports' },
+];
+
+function Sidebar({ auth, page, setPage, pages: sidebarPages }) {
+  const [, setAuthState] = useAuth();
+  const pages = sidebarPages || (auth.role === 'student' ? STUDENT_PAGES : auth.role === 'faculty' ? FACULTY_PAGES : ADMIN_PAGES);
+  return React.createElement('aside', { className: 'sidebar' },
+    React.createElement('div', { className: 'sidebar-logo' },
+      React.createElement('div', { className: 'wordmark' }, 'AcadMS'),
+      React.createElement('div', { className: 'tagline' }, 'v1.0 · Academic Suite'),
+    ),
+    React.createElement('div', { className: 'sidebar-role-badge' },
+      auth.role === 'student' ? '👨‍🎓 Student' : auth.role === 'faculty' ? '👨‍🏫 Faculty' : '🔐 Admin'
+    ),
+    ...pages.map(p =>
+      React.createElement('div', {
+        key: p.id, className: `nav-item ${page === p.id ? 'active' : ''}`,
+        onClick: () => setPage(p.id),
+      },
+        React.createElement('span', { className: 'nav-icon' }, p.icon),
+        p.label
+      )
+    ),
+    React.createElement('div', { className: 'sidebar-spacer' }),
+    React.createElement('div', { className: 'sidebar-user' },
+      React.createElement('div', { className: 'name' }, auth.name),
+      // FIX: show correct identifier for each role
+      React.createElement('div', { className: 'id-tag' },
+        auth.role === 'student' ? (auth.roll_number || '') :
+        auth.role === 'faculty' ? (auth.employee_id || '') : 'Administrator'
+      ),
+      React.createElement('button', { className: 'logout-btn', onClick: () => setAuthState(null) }, '↩ Sign Out')
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STUDENT DASHBOARD
+// ─────────────────────────────────────────────────────────────────
+function StudentDashboard({ auth }) {
+  const { data: enrollments, loading } = useData(() => apiFetch('/student/enrollments'));
+  const { data: attendance } = useData(() => apiFetch('/student/attendance'));
+  if (loading) return React.createElement(Spinner);
+
+  // Split enrollments into current-term (is_current='Y') vs upcoming
+  const currentEnrollments  = (enrollments || []).filter(e =>
+    ['REGISTERED','APPROVED'].includes(e.registration_status) && e.is_current === 'Y'
+  );
+  const upcomingEnrollments = (enrollments || []).filter(e =>
+    ['REGISTERED','WAITLISTED','APPROVED'].includes(e.registration_status) && e.is_current === 'N'
+  );
+  const waitlisted    = (enrollments || []).filter(e => e.registration_status === 'WAITLISTED');
+  const alerts        = (attendance  || []).filter(e => (e.overall_attendance || 0) < 75);
+  const totalCredits  = currentEnrollments.reduce((s, e) => s + (Number(e.credits) || 0), 0);
+
+  // Chart: only current-term attendance
+  const chartData = (attendance || [])
+    .filter(e => e.is_current === 'Y' || !e.is_current) // view always returns current
+    .slice(0, 8).map(e => ({
+      name:    e.course_code,
+      Theory:  e.theory_attendance  || 0,
+      Lab:     e.lab_attendance     || 0,
+      Overall: e.overall_attendance || 0,
+    }));
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'page-header' },
+      React.createElement('div', { className: 'page-title' }, `Welcome, ${(auth.name || '').split(' ')[0]} 👋`),
+      React.createElement('div', { className: 'page-sub' }, 'Here\'s your semester overview')
+    ),
+
+    // Current term banner
+    currentEnrollments.length > 0 && React.createElement('div', { className:'term-banner active' },
+      React.createElement('span',{className:'term-dot'}),
+      React.createElement('strong', null, (enrollments.find(e=>e.is_current==='Y')||{}).term_name || 'Current Term'),
+      React.createElement('span', {style:{color:'var(--muted)',fontWeight:400}}, '— classes in progress')
+    ),
+
+    alerts.length > 0 && React.createElement('div', { className: 'alert alert-warn', style:{marginBottom:24} },
+      '⚠ ',
+      React.createElement('span', null,
+        `${alerts.length} course${alerts.length > 1 ? 's' : ''} below 75% attendance: `,
+        alerts.map(a => a.course_code).join(', ')
+      )
+    ),
+
+    React.createElement('div', { className: 'card-grid grid-4', style:{marginBottom:24} },
+      [
+        { label: 'Enrolled (Current)',  value: currentEnrollments.length,  sub: 'active term',          color: 'var(--accent)'  },
+        { label: 'Total Credits',       value: totalCredits,                sub: 'current semester',     color: 'var(--accent2)' },
+        { label: 'Upcoming Registered', value: upcomingEnrollments.length, sub: 'next term pre-registered', color: 'var(--blue)' || 'var(--accent)' },
+        { label: 'Low Attendance',      value: alerts.length,              sub: 'needs attention',       color: alerts.length ? 'var(--red)' : 'var(--green)' },
+      ].map((t, i) =>
+        React.createElement('div', { key: i, className: 'card stat-tile' },
+          React.createElement('div', { className: 'stat-label' }, t.label),
+          React.createElement('div', { className: 'stat-value', style:{color:t.color} }, t.value),
+          React.createElement('div', { className: 'stat-sub' }, t.sub),
+        )
+      )
+    ),
+
+    attendance && attendance.length > 0 && React.createElement('div', { className: 'card', style:{marginBottom:24} },
+      React.createElement('div', { className: 'section-head' },
+        React.createElement('div', { className: 'section-title' }, 'Current Term Attendance Overview')
+      ),
+      React.createElement('div', { className: 'chart-wrap' },
+        React.createElement(ResponsiveContainer, { width: '100%', height: 260 },
+          React.createElement(BarChart, { data: chartData, margin: {top:0,right:0,left:-20,bottom:0} },
+            React.createElement(CartesianGrid, { strokeDasharray:'3 3', stroke:'var(--border)' }),
+            React.createElement(XAxis, { dataKey:'name', tick:{fill:'var(--muted)',fontSize:11} }),
+            React.createElement(YAxis, { tick:{fill:'var(--muted)',fontSize:11}, domain:[0,100] }),
+            React.createElement(Tooltip, { contentStyle:{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,fontSize:12} }),
+            React.createElement(Legend, { wrapperStyle:{fontSize:12} }),
+            React.createElement(Bar, { dataKey:'Theory',  fill:'var(--accent)',  radius:[4,4,0,0] }),
+            React.createElement(Bar, { dataKey:'Lab',     fill:'var(--accent2)', radius:[4,4,0,0] }),
+            React.createElement(Bar, { dataKey:'Overall', fill:'var(--green)',   radius:[4,4,0,0] }),
+          )
+        )
+      )
+    ),
+
+    // Current term registrations
+    React.createElement('div', { className: 'card', style:{marginBottom:20} },
+      React.createElement('div', { className: 'section-head' },
+        React.createElement('div', { className: 'section-title' }, 'Current Registrations')
+      ),
+      React.createElement('div', { className: 'tbl-wrap' },
+        React.createElement('table', null,
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              ['Course','Credits','Section','Instructor','Status'].map(h => React.createElement('th',{key:h},h))
+            )
+          ),
+          React.createElement('tbody', null,
+            (enrollments || []).map((e, i) =>
+              React.createElement('tr', {key:i},
+                React.createElement('td', null,
+                  React.createElement('div', { style:{fontWeight:600} }, e.course_name),
+                  React.createElement('div', { className:'mono', style:{fontSize:11,color:'var(--muted)'} }, e.course_code)
+                ),
+                React.createElement('td', { className:'mono' }, e.credits),
+                React.createElement('td', { className:'mono' }, e.section_code),
+                React.createElement('td', null, e.instructor),
+                React.createElement('td', null, statusBadge(e.registration_status))
+              )
+            )
+          )
+        )
+      )
+    ),
+
+    // Upcoming term pre-registrations
+    upcomingEnrollments.length > 0 && React.createElement('div', { className:'term-banner upcoming', style:{marginBottom:12} },
+      React.createElement('span',{className:'term-dot'}),
+      React.createElement('strong', null, (upcomingEnrollments[0]||{}).term_name || 'Upcoming Term'),
+      React.createElement('span', {style:{color:'var(--muted)',fontWeight:400}}, ' — registration open, semester not started')
+    ),
+    upcomingEnrollments.length > 0 && React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'section-head' },
+        React.createElement('div', { className: 'section-title' }, 'Upcoming Term Pre-Registrations')
+      ),
+      React.createElement('div', { className: 'tbl-wrap' },
+        React.createElement('table', null,
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              ['Course','Credits','Section','Status'].map(h => React.createElement('th',{key:h},h))
+            )
+          ),
+          React.createElement('tbody', null,
+            upcomingEnrollments.map((e, i) =>
+              React.createElement('tr', {key:i},
+                React.createElement('td', null,
+                  React.createElement('div', {style:{fontWeight:600}}, e.course_name),
+                  React.createElement('div', {className:'mono',style:{fontSize:11,color:'var(--muted)'}}, e.course_code)
+                ),
+                React.createElement('td', {className:'mono'}, e.credits),
+                React.createElement('td', {className:'mono'}, e.section_code),
+                React.createElement('td', null, statusBadge(e.registration_status))
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STUDENT — COURSE REGISTRATION
+// ─────────────────────────────────────────────────────────────────
+function CourseRegistration() {
+  const { data: sections, loading, reload } = useData(() => apiFetch('/student/available-sections'));
+  const { data: enrollments, reload: reloadEnroll } = useData(() => apiFetch('/student/enrollments'));
+  const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
+  const [search, setSearch] = useState('');
+
+  async function register(section) {
+    setMsg(''); setErr('');
+    try {
+      const r = await apiFetch('/student/register', {
+        method: 'POST',
+        body: JSON.stringify({ section_id: section.section_id, term_id: section.term_id }),
+      });
+      setMsg(`${r.status}: ${r.message}`);
+      reload(); reloadEnroll();
+    } catch (e) { setErr(e.message); }
+  }
+
+  async function drop(reg_id) {
+    setMsg(''); setErr('');
+    try {
+      const r = await apiFetch('/student/drop', {
+        method: 'POST',
+        body: JSON.stringify({ registration_id: reg_id }),
+      });
+      setMsg(r.message);
+      reload(); reloadEnroll();
+    } catch (e) { setErr(e.message); }
+  }
+
+  // Sections the student is already in (to avoid showing Register button)
+  const registeredIds = new Set((enrollments || [])
+    .filter(e => ['REGISTERED','APPROVED','WAITLISTED'].includes(e.registration_status))
+    .map(e => e.section_id));
+
+  const filtered = (sections || []).filter(s =>
+    !search
+    || s.course_name.toLowerCase().includes(search.toLowerCase())
+    || s.course_code.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) return React.createElement(Spinner);
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'page-header' },
+      React.createElement('div', { className: 'page-title' }, 'Course Registration'),
+      React.createElement('div', { className: 'page-sub' }, 'Browse and register for available sections')
+    ),
+    msg && React.createElement('div', { className: 'alert alert-ok' }, '✓ ' + msg),
+    err && React.createElement('div', { className: 'alert alert-err' }, '⚠ ' + err),
+
+    // My registrations
+    enrollments && enrollments.length > 0 && React.createElement('div', { className: 'card', style:{marginBottom:20} },
+      React.createElement('div', { className: 'section-head' },
+        React.createElement('div', { className: 'section-title' }, 'My Registrations')
+      ),
+      React.createElement('div', { className: 'tbl-wrap' },
+        React.createElement('table', null,
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              ['Course','Section','Term','Status','Action'].map(h => React.createElement('th',{key:h},h))
+            )
+          ),
+          React.createElement('tbody', null,
+            enrollments.map((e, i) =>
+              React.createElement('tr', {key:i},
+                React.createElement('td', null,
+                  React.createElement('b', null, e.course_code), ' ', e.course_name
+                ),
+                React.createElement('td', { className:'mono' }, e.section_code),
+                React.createElement('td', null, e.term_name),
+                React.createElement('td', null, statusBadge(e.registration_status)),
+                React.createElement('td', null,
+                  // FIX: only show Drop for droppable statuses
+                  !['DROPPED','WITHDRAWN','COMPLETED'].includes(e.registration_status) &&
+                  React.createElement('button', {
+                    className: 'btn btn-danger btn-sm',
+                    onClick: () => drop(e.registration_id),
+                  }, 'Drop')
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+
+    // Available sections
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'section-head', style:{marginBottom:16} },
+        React.createElement('div', { className: 'section-title' }, 'Available Sections'),
+        React.createElement('input', {
+          placeholder: '🔍 Search course…',
+          value: search, onChange: e => setSearch(e.target.value), style:{width:220}
+        })
+      ),
+      filtered.length === 0 && React.createElement('div', { style:{textAlign:'center',padding:32,color:'var(--muted)'} },
+        'No sections available for registration right now.'
+      ),
+      filtered.length > 0 && React.createElement('div', { className: 'tbl-wrap' },
+        React.createElement('table', null,
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              ['Course','Instructor','Seats','Waitlist','Prereqs','Status','Action'].map(h =>
+                React.createElement('th',{key:h},h)
+              )
+            )
+          ),
+          React.createElement('tbody', null,
+            filtered.map((s, i) => {
+              const enrolled = registeredIds.has(s.section_id);
+              // FIX: disable register button for CLOSED/UPCOMING/DATA_ERROR
+              const canRegister = !enrolled && !['DATA_ERROR','UPCOMING','CLOSED'].includes(s.demand_status);
+              return React.createElement('tr', {key:i},
+                React.createElement('td', null,
+                  React.createElement('div', {style:{fontWeight:600}}, s.course_name),
+                  React.createElement('div', {className:'mono',style:{fontSize:11,color:'var(--muted)'}},
+                    s.course_code + ' · ' + s.section_code
+                  ),
+                  s.theory_slot && React.createElement('div', {style:{fontSize:11,color:'var(--muted)'}},
+                    'Slot: ' + s.theory_slot + (s.lab_slot ? ' / ' + s.lab_slot : '')
+                  )
+                ),
+                React.createElement('td', null, s.instructor),
+                React.createElement('td', { className:'mono' }, s.current_enrollment + '/' + s.max_capacity),
+                React.createElement('td', { className:'mono' }, s.current_waitlist || 0),
+                // FIX: show prerequisite status
+                React.createElement('td', null,
+                  s.prerequisites_met === 'Y'
+                    ? React.createElement(Badge, {type:'green'}, '✓ Met')
+                    : React.createElement(Badge, {type:'yellow'}, '! Pending')
+                ),
+                React.createElement('td', null, demandBadge(s.demand_status)),
+                React.createElement('td', null,
+                  enrolled
+                    ? React.createElement(Badge,{type:'green'},'Enrolled')
+                    : React.createElement('button', {
+                        className: 'btn btn-primary btn-sm',
+                        onClick: () => register(s),
+                        disabled: !canRegister,
+                      }, (s.seats_available > 0) ? 'Register' : 'Join Waitlist')
+                )
+              );
+            })
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STUDENT — ATTENDANCE PAGE
+// ─────────────────────────────────────────────────────────────────
+function AttendancePage() {
+  const { data, loading } = useData(() => apiFetch('/student/attendance'));
+  const [selected, setSelected] = useState(null);
+  const { data: history, loading: hLoading } = useData(
+    () => selected ? apiFetch(`/student/attendance/${selected}/history`) : Promise.resolve(null),
+    [selected]
+  );
+  if (loading) return React.createElement(Spinner);
+
+  const rows = data || [];
+  const chartData = rows.map(r => ({
+    name:    r.course_code,
+    Theory:  r.theory_attendance  || 0,
+    Lab:     r.lab_attendance     || 0,
+    Overall: r.overall_attendance || 0,
+  }));
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'page-header' },
+      React.createElement('div', { className: 'page-title' }, 'My Attendance'),
+      React.createElement('div', { className: 'page-sub' }, 'Theory · Lab · Overall percentages')
+    ),
+    rows.length > 0 && React.createElement('div', { className: 'card', style:{marginBottom:24} },
+      React.createElement('div', { className: 'section-title', style:{marginBottom:16} }, 'Attendance by Course'),
+      React.createElement(ResponsiveContainer, { width:'100%', height:240 },
+        React.createElement(BarChart, { data: chartData, margin:{top:0,right:0,left:-20,bottom:0} },
+          React.createElement(CartesianGrid, { strokeDasharray:'3 3', stroke:'var(--border)' }),
+          React.createElement(XAxis, { dataKey:'name', tick:{fill:'var(--muted)',fontSize:11} }),
+          React.createElement(YAxis, { tick:{fill:'var(--muted)',fontSize:11}, domain:[0,100] }),
+          React.createElement(Tooltip, { contentStyle:{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,fontSize:12} }),
+          React.createElement(Legend, { wrapperStyle:{fontSize:12} }),
+          React.createElement(Bar, { dataKey:'Theory',  fill:'var(--accent)',  radius:[4,4,0,0] }),
+          React.createElement(Bar, { dataKey:'Lab',     fill:'var(--accent2)', radius:[4,4,0,0] }),
+          React.createElement(Bar, { dataKey:'Overall', fill:'var(--green)',   radius:[4,4,0,0] }),
+        )
+      )
+    ),
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'section-title', style:{marginBottom:16} }, 'Course Breakdown'),
+      React.createElement('div', { className: 'tbl-wrap' },
+        React.createElement('table', null,
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              ['Course','Status','Theory %','Lab %','Overall %','Details'].map(h => React.createElement('th',{key:h},h))
+            )
+          ),
+          React.createElement('tbody', null,
+            rows.map((r, i) =>
+              React.createElement('tr', {key:i},
+                React.createElement('td', null,
+                  React.createElement('div',{style:{fontWeight:600}},r.course_name),
+                  React.createElement('div',{className:'mono',style:{fontSize:11,color:'var(--muted)'}},r.course_code)
+                ),
+                React.createElement('td', null, statusBadge(r.registration_status)),
+                React.createElement('td', null, React.createElement(PctBar,{pct:r.theory_attendance})),
+                React.createElement('td', null, React.createElement(PctBar,{pct:r.lab_attendance})),
+                React.createElement('td', null, React.createElement(PctBar,{pct:r.overall_attendance})),
+                React.createElement('td', null,
+                  React.createElement('button', {
+                    className: 'btn btn-ghost btn-sm',
+                    onClick: () => setSelected(selected === r.registration_id ? null : r.registration_id),
+                  }, selected === r.registration_id ? 'Hide' : 'View')
+                )
+              )
+            )
+          )
+        )
+      ),
+      selected && React.createElement('div', { style:{marginTop:20, borderTop:'1px solid var(--border)', paddingTop:20} },
+        React.createElement('div', { className: 'section-title', style:{marginBottom:12} }, 'Attendance History'),
+        hLoading ? React.createElement(Spinner) :
+        React.createElement('div', { className: 'tbl-wrap' },
+          React.createElement('table', null,
+            React.createElement('thead', null,
+              React.createElement('tr', null,
+                ['Date','Type','Slot','Topic','Status','Remarks'].map(h => React.createElement('th',{key:h},h))
+              )
+            ),
+            React.createElement('tbody', null,
+              (history || []).map((h, i) => {
+                const statusColor = {P:'green',L:'yellow',E:'blue',OD:'blue',A:'red',NOT_MARKED:'gray'};
+                return React.createElement('tr', {key:i},
+                  React.createElement('td', { className:'mono' }, h.class_date ? h.class_date.slice(0,10) : '—'),
+                  React.createElement('td', null, React.createElement(Badge,{type: h.class_type==='LAB'?'blue':'gray'},h.class_type)),
+                  React.createElement('td', { className:'mono' }, h.slot_code),
+                  React.createElement('td', null, h.topic || '—'),
+                  React.createElement('td', null, React.createElement(Badge,{type:statusColor[h.status]||'gray'},h.status)),
+                  React.createElement('td', null, h.remarks || '—')
+                );
+              })
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STUDENT — TIMETABLE
+// ─────────────────────────────────────────────────────────────────
+function TimetablePage() {
+  const { data, loading } = useData(() => apiFetch('/student/timetable'));
+  if (loading) return React.createElement(Spinner);
+  const DAYS = ['MON','TUE','WED','THU','FRI','SAT'];
+  const grouped = {};
+  DAYS.forEach(d => { grouped[d] = []; });
+  (data || []).forEach(r => { if (grouped[r.day_of_week]) grouped[r.day_of_week].push(r); });
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'page-header' },
+      React.createElement('div', { className: 'page-title' }, 'My Timetable'),
+      React.createElement('div', { className: 'page-sub' }, 'Current term class schedule')
+    ),
+    React.createElement('div', { className: 'card' },
+      DAYS.map(day =>
+        React.createElement('div', { key:day, style:{marginBottom:16} },
+          React.createElement('div', { style:{fontSize:12,fontWeight:700,color:'var(--muted)',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.08em'} }, day),
+          grouped[day].length === 0
+            ? React.createElement('div', { style:{color:'var(--border2)',fontSize:13,paddingLeft:12} }, 'No classes')
+            : React.createElement('div', { style:{display:'flex',gap:10,flexWrap:'wrap'} },
+                grouped[day].map((c,i) =>
+                  React.createElement('div', {
+                    key:i,
+                    style:{background:'var(--surface2)',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 14px',minWidth:200}
+                  },
+                    React.createElement('div', {style:{fontWeight:600,fontSize:13}}, c.course_code),
+                    React.createElement('div', {style:{fontSize:12,color:'var(--muted)',marginTop:2}}, c.course_name),
+                    React.createElement('div', {style:{fontSize:11,fontFamily:'var(--mono)',marginTop:4,color:'var(--accent)'}},
+                      c.theory_slot + (c.lab_slot ? ' / ' + c.lab_slot : '')
+                    ),
+                    React.createElement('div', {style:{fontSize:11,color:'var(--muted)',marginTop:2}},
+                      // FIX: start_time / end_time come back as ISO strings from Oracle DATE
+                      c.start_time ? String(c.start_time).slice(11,16) + ' – ' + String(c.end_time).slice(11,16) : ''
+                    ),
+                    React.createElement('div', {style:{fontSize:11,color:'var(--muted)'}}, c.theory_room || '')
+                  )
+                )
+              )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FACULTY DASHBOARD
+// ─────────────────────────────────────────────────────────────────
+function FacultyDashboard({ auth }) {
+  const { data: sections, loading } = useData(() => apiFetch('/faculty/sections'));
+  if (loading) return React.createElement(Spinner);
+  const secs = sections || [];
+
+  // Split into active-term sections vs upcoming-term sections
+  const activeSecs   = secs.filter(s => s.is_current === 'Y');
+  const upcomingSecs = secs.filter(s => s.is_current === 'N');
+  const totalStudents = activeSecs.reduce((s,x) => s + (Number(x.current_enrollment)||0), 0);
+
+  const chartData = activeSecs.map(s => ({
+    name:     s.course_code + ' §' + s.section_code,
+    Enrolled: Number(s.current_enrollment) || 0,
+    Capacity: Number(s.max_capacity)       || 0,
+    Waitlist: Number(s.current_waitlist)   || 0,
+  }));
+
+  function SectionTable(secList) {
+    return React.createElement('div', {className:'tbl-wrap'},
+      React.createElement('table',null,
+        React.createElement('thead',null,
+          React.createElement('tr',null,
+            ['Course','Section','Enrolled','Waitlist','Theory Done','Lab Done'].map(h=>
+              React.createElement('th',{key:h},h)
+            )
+          )
+        ),
+        React.createElement('tbody',null,
+          secList.map((s,i)=>
+            React.createElement('tr',{key:i},
+              React.createElement('td',null,
+                React.createElement('div',{style:{fontWeight:600}},s.course_name),
+                React.createElement('div',{className:'mono',style:{fontSize:11,color:'var(--muted)'}},s.course_code)
+              ),
+              React.createElement('td',{className:'mono'},s.section_code),
+              React.createElement('td',{className:'mono'},`${s.current_enrollment}/${s.max_capacity}`),
+              React.createElement('td',{className:'mono'},s.current_waitlist),
+              React.createElement('td',{className:'mono'},`${s.theory_conducted}/${s.total_theory_classes_planned}`),
+              React.createElement('td',{className:'mono'},`${s.lab_conducted}/${s.total_lab_classes_planned}`),
+            )
+          )
+        )
+      )
+    );
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'page-header' },
+      React.createElement('div', { className: 'page-title' }, `Hello, ${(auth.name || '').split(' ')[0]} 👋`),
+      React.createElement('div', { className: 'page-sub' }, 'Your teaching overview')
+    ),
+
+    // Current term banner
+    activeSecs.length > 0 && React.createElement('div',{className:'term-banner active'},
+      React.createElement('span',{className:'term-dot'}),
+      React.createElement('strong',null,(activeSecs[0]||{}).term_name||'Current Term'),
+      ' — classes in progress'
+    ),
+
+    React.createElement('div', { className: 'card-grid grid-3', style:{marginBottom:24} },
+      [
+        { label:'Active Sections',   value: activeSecs.length,   color:'var(--accent)'  },
+        { label:'Total Students',    value: totalStudents,        color:'var(--green)'   },
+        { label:'Upcoming Sections', value: upcomingSecs.length,  color:'var(--accent2)' },
+      ].map((t,i) =>
+        React.createElement('div', {key:i, className:'card stat-tile'},
+          React.createElement('div',{className:'stat-label'},t.label),
+          React.createElement('div',{className:'stat-value',style:{color:t.color}},t.value),
+        )
+      )
+    ),
+
+    chartData.length > 0 && React.createElement('div', { className:'card', style:{marginBottom:24} },
+      React.createElement('div', {className:'section-title',style:{marginBottom:16}}, 'Current Term — Section Capacity'),
+      React.createElement(ResponsiveContainer, {width:'100%',height:220},
+        React.createElement(BarChart, {data:chartData, margin:{top:0,right:0,left:-20,bottom:0}},
+          React.createElement(CartesianGrid, {strokeDasharray:'3 3',stroke:'var(--border)'}),
+          React.createElement(XAxis, {dataKey:'name',tick:{fill:'var(--muted)',fontSize:10}}),
+          React.createElement(YAxis, {tick:{fill:'var(--muted)',fontSize:11}}),
+          React.createElement(Tooltip, {contentStyle:{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,fontSize:12}}),
+          React.createElement(Legend, {wrapperStyle:{fontSize:12}}),
+          React.createElement(Bar, {dataKey:'Enrolled',fill:'var(--accent)',  radius:[4,4,0,0]}),
+          React.createElement(Bar, {dataKey:'Capacity',fill:'var(--border2)', radius:[4,4,0,0]}),
+          React.createElement(Bar, {dataKey:'Waitlist',fill:'var(--yellow)',  radius:[4,4,0,0]}),
+        )
+      )
+    ),
+
+    React.createElement('div', { className:'card' },
+      // Active sections
+      activeSecs.length > 0 && React.createElement('div',null,
+        React.createElement('div',{className:'term-group-head active'},'▶ Current Term Sections (attendance & scheduling active)'),
+        SectionTable(activeSecs)
+      ),
+      // Upcoming sections
+      upcomingSecs.length > 0 && React.createElement('div',{style:{marginTop:24}},
+        React.createElement('div',{className:'term-group-head upcoming'},'◷ Upcoming Term Sections (registration open)'),
+        SectionTable(upcomingSecs)
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FACULTY — SECTIONS (student list, grouped by term)
+// ─────────────────────────────────────────────────────────────────
+function SectionsPage() {
+  const { data: sections } = useData(() => apiFetch('/faculty/sections'));
+  const [selectedSec, setSelectedSec] = useState(null);
+  const { data: students, loading } = useData(
+    () => selectedSec ? apiFetch(`/faculty/sections/${selectedSec}/students`) : Promise.resolve(null),
+    [selectedSec]
+  );
+
+  const activeSecs   = (sections||[]).filter(s => s.is_current === 'Y');
+  const upcomingSecs = (sections||[]).filter(s => s.is_current === 'N');
+
+  function SecBtn(s, i) {
+    return React.createElement('button',{
+      key:i, className:`btn btn-sm ${selectedSec===s.section_id?'btn-primary':'btn-ghost'}`,
+      onClick:()=>setSelectedSec(s.section_id)
+    }, s.course_code + ' §' + s.section_code);
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', {className:'page-header'},
+      React.createElement('div',{className:'page-title'},'Section Management'),
+      React.createElement('div',{className:'page-sub'},'View student lists and enrollment details')
+    ),
+
+    activeSecs.length > 0 && React.createElement('div',{style:{marginBottom:12}},
+      React.createElement('div',{className:'term-group-head active',style:{marginBottom:8}},'▶ Current Term'),
+      React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
+        activeSecs.map((s,i)=>SecBtn(s,i))
+      )
+    ),
+    upcomingSecs.length > 0 && React.createElement('div',{style:{marginBottom:20}},
+      React.createElement('div',{className:'term-group-head upcoming',style:{marginBottom:8}},'◷ Upcoming Term (Registration Open)'),
+      React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
+        upcomingSecs.map((s,i)=>SecBtn(s,i+100))
+      )
+    ),
+
+    selectedSec && React.createElement('div',{className:'card'},
+      loading ? React.createElement(Spinner) :
+      (students||[]).length === 0
+        ? React.createElement('div',{style:{textAlign:'center',padding:32,color:'var(--muted)'}},
+            'No students registered yet.'
+          )
+        : React.createElement('div',{className:'tbl-wrap'},
+          React.createElement('table',null,
+            React.createElement('thead',null,
+              React.createElement('tr',null,
+                ['Roll No','Name','Email','Semester','Status','Warning','Locked'].map(h=>
+                  React.createElement('th',{key:h},h)
+                )
+              )
+            ),
+            React.createElement('tbody',null,
+              (students||[]).map((s,i)=>
+                React.createElement('tr',{key:i},
+                  React.createElement('td',{className:'mono'},s.roll_number),
+                  React.createElement('td',null,s.student_name),
+                  React.createElement('td',{style:{fontSize:12,color:'var(--muted)'}},s.email),
+                  React.createElement('td',{className:'mono'},s.current_semester),
+                  React.createElement('td',null,statusBadge(s.registration_status)),
+                  React.createElement('td',null,
+                    s.attendance_warning_sent==='Y'
+                      ? React.createElement(Badge,{type:'yellow'},'⚠ Yes')
+                      : React.createElement(Badge,{type:'gray'},'No')
+                  ),
+                  React.createElement('td',null,
+                    s.attendance_locked==='Y'
+                      ? React.createElement(Badge,{type:'red'},'🔒 Locked')
+                      : React.createElement(Badge,{type:'green'},'Open')
+                  ),
+                )
+              )
+            )
+          )
+        )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FACULTY — ATTENDANCE MANAGEMENT
+// ─────────────────────────────────────────────────────────────────
+function AttendanceMgmt() {
+  const { data: allSections } = useData(() => apiFetch('/faculty/sections'));
+  // Only current-term sections have classes to mark
+  const sections = (allSections||[]).filter(s => s.is_current === 'Y');
+  const [sec, setSec] = useState(null);
+  const { data: schedule } = useData(
+    () => sec ? apiFetch(`/faculty/sections/${sec}/schedule`) : Promise.resolve(null),
+    [sec]
+  );
+  const [selSch, setSelSch] = useState(null);
+  const { data: attList, loading: attLoading, reload: reloadAtt } = useData(
+    () => sec && selSch ? apiFetch(`/faculty/sections/${sec}/attendance/${selSch}`) : Promise.resolve(null),
+    [sec, selSch]
+  );
+  const [pending, setPending] = useState({});
+  const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
+
+  async function submitBulk() {
+    setMsg(''); setErr('');
+    const pairs = Object.entries(pending).map(([sid,st])=>`${sid}:${st}`).join(',');
+    if (!pairs) { setErr('No changes to save.'); return; }
+    try {
+      const r = await apiFetch('/faculty/attendance/bulk',{
+        method:'POST',
+        body:JSON.stringify({schedule_id:selSch, attendance_data:pairs})
+      });
+      setMsg(r.message); setPending({}); reloadAtt();
+    } catch(e) { setErr(e.message); }
+  }
+
+  const statuses   = ['P','A','L','E','OD'];
+  const statColors = {P:'var(--green)',A:'var(--red)',L:'var(--yellow)',E:'var(--accent)',OD:'var(--accent2)'};
+
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},
+      React.createElement('div',{className:'page-title'},'Mark Attendance'),
+      React.createElement('div',{className:'page-sub'},'Select section → session → mark students')
+    ),
+    msg && React.createElement('div',{className:'alert alert-ok'},'✓ '+msg),
+    err && React.createElement('div',{className:'alert alert-err'},'⚠ '+err),
+
+    React.createElement('div',{className:'card',style:{marginBottom:16}},
+      React.createElement('div',{className:'section-title',style:{marginBottom:12}},'1. Select Section'),
+      React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
+        (sections||[]).map((s,i)=>
+          React.createElement('button',{
+            key:i,
+            className:`btn btn-sm ${sec===s.section_id?'btn-primary':'btn-ghost'}`,
+            onClick:()=>{setSec(s.section_id);setSelSch(null);}
+          }, s.course_code+' §'+s.section_code)
+        )
+      )
+    ),
+
+    sec && React.createElement('div',{className:'card',style:{marginBottom:16}},
+      React.createElement('div',{className:'section-title',style:{marginBottom:12}},'2. Select Class Session'),
+      React.createElement('div',{className:'tbl-wrap'},
+        React.createElement('table',null,
+          React.createElement('thead',null,
+            React.createElement('tr',null,
+              ['Date','Type','Slot','Topic','Marked','Action'].map(h=>React.createElement('th',{key:h},h))
+            )
+          ),
+          React.createElement('tbody',null,
+            (schedule||[]).filter(s=>s.is_cancelled==='N').map((s,i)=>
+              React.createElement('tr',{key:i},
+                React.createElement('td',{className:'mono'},s.class_date?s.class_date.slice(0,10):'—'),
+                React.createElement('td',null,React.createElement(Badge,{type:s.class_type==='LAB'?'blue':'gray'},s.class_type)),
+                React.createElement('td',{className:'mono'},s.slot_code),
+                React.createElement('td',null,s.topic||'—'),
+                React.createElement('td',null,
+                  s.is_attendance_marked==='Y'
+                    ? React.createElement(Badge,{type:'green'},'Done')
+                    : React.createElement(Badge,{type:'gray'},'Pending')
+                ),
+                React.createElement('td',null,
+                  React.createElement('button',{
+                    className:`btn btn-sm ${selSch===s.schedule_id?'btn-primary':'btn-ghost'}`,
+                    onClick:()=>setSelSch(s.schedule_id)
+                  },'Select')
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+
+    sec && selSch && React.createElement('div',{className:'card'},
+      React.createElement('div',{className:'section-head'},
+        React.createElement('div',{className:'section-title'},'3. Mark Attendance'),
+        React.createElement('div',{style:{display:'flex',gap:8,alignItems:'center'}},
+          React.createElement('span',{style:{fontSize:12,color:'var(--muted)'}},
+            statuses.map(s=>
+              React.createElement('span',{key:s,style:{background:`${statColors[s]}22`,color:statColors[s],borderRadius:4,padding:'2px 7px',marginRight:4,fontSize:11,fontFamily:'var(--mono)',fontWeight:700}},s)
+            )
+          ),
+          React.createElement('button',{className:'btn btn-primary btn-sm',onClick:submitBulk},'Save All')
+        )
+      ),
+      attLoading ? React.createElement(Spinner) :
+      React.createElement('div',{className:'tbl-wrap'},
+        React.createElement('table',null,
+          React.createElement('thead',null,
+            React.createElement('tr',null,
+              ['Roll No','Name','Current Status','Mark As'].map(h=>React.createElement('th',{key:h},h))
+            )
+          ),
+          React.createElement('tbody',null,
+            (attList||[]).map((s,i)=>
+              React.createElement('tr',{key:i},
+                React.createElement('td',{className:'mono'},s.roll_number),
+                React.createElement('td',null,s.student_name),
+                React.createElement('td',null,
+                  React.createElement(Badge,{
+                    type:{P:'green',A:'red',L:'yellow',E:'blue',OD:'blue',NOT_MARKED:'gray'}[s.status]||'gray'
+                  },s.status)
+                ),
+                React.createElement('td',null,
+                  React.createElement('div',{style:{display:'flex',gap:4}},
+                    statuses.map(st=>
+                      React.createElement('button',{
+                        key:st, className:'btn btn-sm',
+                        style:{
+                          background:pending[s.student_id]===st?statColors[st]:'transparent',
+                          color:pending[s.student_id]===st?'#fff':statColors[st],
+                          border:`1px solid ${statColors[st]}`,
+                          padding:'3px 8px',fontSize:11,fontFamily:'var(--mono)',fontWeight:700
+                        },
+                        onClick:()=>setPending(p=>({...p,[s.student_id]:st}))
+                      },st)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FACULTY — CLASS SCHEDULE
+// ─────────────────────────────────────────────────────────────────
+function SchedulePage() {
+  const { data: allSections } = useData(() => apiFetch('/faculty/sections'));
+  // Only current-term sections can have class sessions scheduled
+  const sections = (allSections||[]).filter(s => s.is_current === 'Y');
+  const [sec, setSec] = useState(null);
+  const { data: schedule, reload } = useData(
+    () => sec ? apiFetch(`/faculty/sections/${sec}/schedule`) : Promise.resolve(null),
+    [sec]
+  );
+  // FIX: derive available slots from the selected section instead of asking faculty to type a number
+  const selSec = (sections||[]).find(s => s.section_id === sec);
+
+  // Build slot options for the selected section
+  // theory_slot_id / lab_slot_id are returned by GET /faculty/sections (added in fixed router)
+  function buildSlotOptions(sec) {
+    if (!sec) return [];
+    const opts = [];
+    if (sec.theory_slot_id) opts.push({ id: Number(sec.theory_slot_id), label: `Theory — ${sec.theory_slot}` });
+    if (sec.lab_slot_id)    opts.push({ id: Number(sec.lab_slot_id),    label: `Lab — ${sec.lab_slot}` });
+    return opts;
+  }
+  const slotOpts = buildSlotOptions(selSec);
+
+  // Initialise form once a section is chosen
+  const defaultForm = () => ({
+    class_date: '',
+    slot_id: slotOpts.length ? String(slotOpts[0].id) : '',
+    class_type: 'THEORY',
+    lecture_number: 1,
+    topic: '',
+  });
+
+  const [form, setForm] = useState(defaultForm());
+  const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
+
+  // Reset form when section changes
+  useEffect(() => {
+    setForm(defaultForm());
+    setMsg(''); setErr('');
+  }, [sec]);
+
+  async function createSession() {
+    setMsg(''); setErr('');
+    if (!form.class_date) { setErr('Please select a date.'); return; }
+    if (!form.slot_id)    { setErr('Please select a slot.');  return; }
+    try {
+      const r = await apiFetch('/faculty/sessions',{
+        method:'POST',
+        body: JSON.stringify({
+          section_id:     sec,
+          class_date:     form.class_date,           // "YYYY-MM-DD"
+          slot_id:        Number(form.slot_id),
+          class_type:     form.class_type,
+          lecture_number: Number(form.lecture_number),
+          topic:          form.topic || null,
+        })
+      });
+      setMsg(r.message); reload();
+    } catch(e) { setErr(e.message); }
+  }
+
+  async function cancelSession(sch_id) {
+    setMsg(''); setErr('');
+    try {
+      const r = await apiFetch('/faculty/sessions/cancel',{
+        method:'POST', body:JSON.stringify({schedule_id:sch_id,reason:'Cancelled by faculty'})
+      });
+      setMsg(r.message); reload();
+    } catch(e) { setErr(e.message); }
+  }
+
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},
+      React.createElement('div',{className:'page-title'},'Class Scheduling'),
+      React.createElement('div',{className:'page-sub'},'Create and manage class sessions')
+    ),
+    msg && React.createElement('div',{className:'alert alert-ok'},'✓ '+msg),
+    err && React.createElement('div',{className:'alert alert-err'},'⚠ '+err),
+
+    // Section picker
+    React.createElement('div',{style:{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}},
+      (sections||[]).map((s,i)=>
+        React.createElement('button',{
+          key:i,
+          className:`btn btn-sm ${sec===s.section_id?'btn-primary':'btn-ghost'}`,
+          onClick:()=>setSec(s.section_id)
+        }, s.course_code+' §'+s.section_code)
+      )
+    ),
+
+    sec && React.createElement('div',{style:{display:'grid',gridTemplateColumns:'340px 1fr',gap:20}},
+      // Create session form
+      React.createElement('div',{className:'card'},
+        React.createElement('div',{className:'section-title',style:{marginBottom:16}},'Create Session'),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',null,'Date'),
+          React.createElement('input',{
+            type:'date', value:form.class_date,
+            onChange:e=>setForm(f=>({...f,class_date:e.target.value}))
+          })
+        ),
+        // FIX: slot dropdown with real slot options from the section
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',null,'Slot'),
+          slotOpts.length > 0
+            ? React.createElement('select',{
+                value: form.slot_id,
+                onChange: e => {
+                  const chosen = slotOpts.find(o => String(o.id) === e.target.value);
+                  const inferredType = chosen && chosen.label.startsWith('Lab') ? 'LAB' : 'THEORY';
+                  setForm(f=>({...f, slot_id: e.target.value, class_type: inferredType}));
+                }
+              },
+                slotOpts.map(o =>
+                  React.createElement('option',{key:o.id, value:String(o.id)}, o.label)
+                )
+              )
+            : React.createElement('input',{
+                type:'number', value:form.slot_id,
+                onChange:e=>setForm(f=>({...f,slot_id:e.target.value})),
+                placeholder:'Slot ID'
+              })
+        ),
+        // FIX: class type auto-derived from slot selection; still shown as read-only context
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',null,'Class Type'),
+          React.createElement('select',{
+            value:form.class_type,
+            onChange:e=>setForm(f=>({...f,class_type:e.target.value}))
+          },
+            React.createElement('option',{value:'THEORY'},'Theory'),
+            React.createElement('option',{value:'LAB'},'Lab'),
+          )
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',null,'Lecture #'),
+          React.createElement('input',{
+            type:'number', min:1, value:form.lecture_number,
+            onChange:e=>setForm(f=>({...f,lecture_number:e.target.value}))
+          })
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',null,'Topic (optional)'),
+          React.createElement('input',{
+            value:form.topic,
+            onChange:e=>setForm(f=>({...f,topic:e.target.value})),
+            placeholder:'e.g. Introduction to Pointers'
+          })
+        ),
+        React.createElement('button',{
+          className:'btn btn-primary',
+          onClick:createSession,
+          style:{width:'100%',justifyContent:'center'}
+        },'+ Create Session')
+      ),
+
+      // Schedule list
+      React.createElement('div',{className:'card'},
+        React.createElement('div',{className:'section-title',style:{marginBottom:16}},'All Sessions'),
+        React.createElement('div',{className:'tbl-wrap'},
+          React.createElement('table',null,
+            React.createElement('thead',null,
+              React.createElement('tr',null,
+                ['Date','Type','Lecture','Slot','Topic','Status','Action'].map(h=>React.createElement('th',{key:h},h))
+              )
+            ),
+            React.createElement('tbody',null,
+              (schedule||[]).map((s,i)=>
+                React.createElement('tr',{key:i},
+                  React.createElement('td',{className:'mono'},s.class_date?s.class_date.slice(0,10):'—'),
+                  React.createElement('td',null,React.createElement(Badge,{type:s.class_type==='LAB'?'blue':'gray'},s.class_type)),
+                  React.createElement('td',{className:'mono'},'#'+s.lecture_number),
+                  React.createElement('td',{className:'mono'},s.slot_code),
+                  React.createElement('td',null,s.topic||'—'),
+                  React.createElement('td',null,
+                    s.is_cancelled==='Y'
+                      ? React.createElement(Badge,{type:'red'},'Cancelled')
+                      : s.is_attendance_marked==='Y'
+                        ? React.createElement(Badge,{type:'green'},'Done')
+                        : React.createElement(Badge,{type:'gray'},'Pending')
+                  ),
+                  React.createElement('td',null,
+                    s.is_cancelled==='N' && s.is_attendance_marked==='N' &&
+                    React.createElement('button',{
+                      className:'btn btn-danger btn-sm',
+                      onClick:()=>cancelSession(s.schedule_id)
+                    },'Cancel')
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FACULTY — REPORTS
+// ─────────────────────────────────────────────────────────────────
+function ReportsPage() {
+  const { data: allSections } = useData(() => apiFetch('/faculty/sections'));
+  // Reports are for current-term sections (attendance data exists)
+  const sections = (allSections||[]).filter(s => s.is_current === 'Y');
+  const [sec, setSec] = useState(null);
+  const [tab, setTab] = useState('summary');
+  const { data: summary, loading: sl } = useData(
+    () => sec ? apiFetch(`/attendance/section/${sec}/summary`) : Promise.resolve(null),
+    [sec]
+  );
+  const { data: defaulters, loading: dl } = useData(
+    () => sec ? apiFetch(`/reports/section/${sec}/defaulters`) : Promise.resolve(null),
+    [sec]
+  );
+
+  const chartData = (summary||[]).map(s=>({
+    name:    s.roll_number,
+    Theory:  s.theory_pct  || 0,
+    Lab:     s.lab_pct     || 0,
+    Overall: s.overall_pct || 0,
+  }));
+
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},
+      React.createElement('div',{className:'page-title'},'Reports'),
+      React.createElement('div',{className:'page-sub'},'Section attendance reports and defaulter identification')
+    ),
+    React.createElement('div',{style:{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}},
+      (sections||[]).map((s,i)=>
+        React.createElement('button',{
+          key:i,
+          className:`btn btn-sm ${sec===s.section_id?'btn-primary':'btn-ghost'}`,
+          onClick:()=>setSec(s.section_id)
+        }, s.course_code+' §'+s.section_code)
+      )
+    ),
+
+    sec && React.createElement('div',null,
+      React.createElement('div',{className:'tabs'},
+        ['summary','defaulters','chart'].map(t=>
+          React.createElement('button',{key:t,className:`tab-btn ${tab===t?'active':''}`,onClick:()=>setTab(t)},
+            t==='summary'?'All Students':t==='defaulters'?'Defaulters (<75%)':'Chart View'
+          )
+        )
+      ),
+
+      tab==='chart' && summary && React.createElement('div',{className:'card'},
+        React.createElement('div',{className:'section-title',style:{marginBottom:16}},'Attendance Overview'),
+        React.createElement(ResponsiveContainer,{width:'100%',height:320},
+          React.createElement(BarChart,{data:chartData.slice(0,20),margin:{top:0,right:0,left:-20,bottom:40}},
+            React.createElement(CartesianGrid,{strokeDasharray:'3 3',stroke:'var(--border)'}),
+            React.createElement(XAxis,{dataKey:'name',tick:{fill:'var(--muted)',fontSize:9},angle:-45,textAnchor:'end'}),
+            React.createElement(YAxis,{tick:{fill:'var(--muted)',fontSize:11},domain:[0,100]}),
+            React.createElement(Tooltip,{contentStyle:{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,fontSize:12}}),
+            React.createElement(Legend,{wrapperStyle:{fontSize:12}}),
+            React.createElement(Bar,{dataKey:'Theory', fill:'var(--accent)',  radius:[4,4,0,0]}),
+            React.createElement(Bar,{dataKey:'Lab',    fill:'var(--accent2)', radius:[4,4,0,0]}),
+            React.createElement(Bar,{dataKey:'Overall',fill:'var(--green)',   radius:[4,4,0,0]}),
+          )
+        )
+      ),
+
+      tab==='summary' && React.createElement('div',{className:'card'},
+        sl ? React.createElement(Spinner) :
+        React.createElement('div',{className:'tbl-wrap'},
+          React.createElement('table',null,
+            React.createElement('thead',null,
+              React.createElement('tr',null,
+                ['Roll No','Name','Theory %','Lab %','Overall %'].map(h=>React.createElement('th',{key:h},h))
+              )
+            ),
+            React.createElement('tbody',null,
+              (summary||[]).map((s,i)=>
+                React.createElement('tr',{key:i},
+                  React.createElement('td',{className:'mono'},s.roll_number),
+                  React.createElement('td',null,s.student_name),
+                  React.createElement('td',null,React.createElement(PctBar,{pct:s.theory_pct})),
+                  React.createElement('td',null,React.createElement(PctBar,{pct:s.lab_pct})),
+                  React.createElement('td',null,React.createElement(PctBar,{pct:s.overall_pct})),
+                )
+              )
+            )
+          )
+        )
+      ),
+
+      tab==='defaulters' && React.createElement('div',{className:'card'},
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,marginBottom:16}},
+          React.createElement('div',{className:'section-title'},'Defaulters List'),
+          React.createElement(Badge,{type:'red'},(defaulters||[]).length+' students')
+        ),
+        dl ? React.createElement(Spinner) :
+        (defaulters||[]).length === 0
+          ? React.createElement('div',{style:{textAlign:'center',padding:40,color:'var(--muted)'}},
+              '✓ No defaulters found'
+            )
+          : React.createElement('div',{className:'tbl-wrap'},
+              React.createElement('table',null,
+                React.createElement('thead',null,
+                  React.createElement('tr',null,
+                    ['Roll No','Name','Email','Theory %','Lab %','Overall %'].map(h=>React.createElement('th',{key:h},h))
+                  )
+                ),
+                React.createElement('tbody',null,
+                  (defaulters||[]).map((s,i)=>
+                    React.createElement('tr',{key:i},
+                      React.createElement('td',{className:'mono'},s.roll_number),
+                      React.createElement('td',null,s.student_name),
+                      React.createElement('td',{style:{fontSize:12,color:'var(--muted)'}},s.email),
+                      React.createElement('td',null,React.createElement(PctBar,{pct:s.theory_pct})),
+                      React.createElement('td',null,React.createElement(PctBar,{pct:s.lab_pct})),
+                      React.createElement('td',null,React.createElement(PctBar,{pct:s.overall_pct})),
+                    )
+                  )
+                )
+              )
+            )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FACULTY — FLOAT SECTION (create section for upcoming term)
+// ─────────────────────────────────────────────────────────────────
+function FloatSectionPage() {
+  const { data: offerings, loading: oLoading } = useData(() => apiFetch('/faculty/upcoming-offerings'));
+  const { data: mySections, reload: reloadSections } = useData(() => apiFetch('/faculty/sections'));
+
+  const [sel, setSel]     = useState(null);   // selected offering_id
+  const [form, setForm]   = useState({ section_code:'A', max_capacity:60, waitlist_capacity:10, theory_room:'', lab_room:'', total_theory_classes_planned:42, total_lab_classes_planned:0 });
+  const [msg, setMsg]     = useState('');
+  const [err, setErr]     = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Upcoming term sections already floated by this faculty
+  const upcomingSecs = (mySections||[]).filter(s => s.is_current === 'N');
+
+  const selOffering = (offerings||[]).find(o => o.offering_id === sel);
+
+  // When offering changes, auto-set lab planned to 0 if no lab
+  useEffect(() => {
+    if (!selOffering) return;
+    setForm(f => ({
+      ...f,
+      total_lab_classes_planned: selOffering.has_lab === 'Y' ? 14 : 0,
+      lab_room: selOffering.has_lab === 'Y' ? f.lab_room : '',
+    }));
+  }, [sel]);
+
+  async function handleFloat() {
+    if (!sel) { setErr('Please select a course offering.'); return; }
+    if (!form.section_code.trim()) { setErr('Section code is required.'); return; }
+    if (!form.max_capacity || form.max_capacity < 1) { setErr('Max capacity must be at least 1.'); return; }
+    setSubmitting(true); setMsg(''); setErr('');
+    try {
+      const r = await apiFetch('/faculty/float-section', {
+        method: 'POST',
+        body: JSON.stringify({
+          offering_id:                   sel,
+          section_code:                  form.section_code.trim().toUpperCase(),
+          max_capacity:                  Number(form.max_capacity),
+          waitlist_capacity:             Number(form.waitlist_capacity),
+          theory_room:                   form.theory_room || null,
+          lab_room:                      form.lab_room    || null,
+          total_theory_classes_planned:  Number(form.total_theory_classes_planned),
+          total_lab_classes_planned:     Number(form.total_lab_classes_planned),
+        }),
+      });
+      setMsg(r.message);
+      setSel(null);
+      setForm({ section_code:'A', max_capacity:60, waitlist_capacity:10, theory_room:'', lab_room:'', total_theory_classes_planned:42, total_lab_classes_planned:0 });
+      reloadSections();
+    } catch(e) { setErr(e.message); }
+    finally { setSubmitting(false); }
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', {className:'page-header'},
+      React.createElement('div', {className:'page-title'}, 'Float Section'),
+      React.createElement('div', {className:'page-sub'}, 'Create sections for the upcoming term so students can register')
+    ),
+
+    // Upcoming term banner
+    offerings && offerings.length > 0 && React.createElement('div',{className:'term-banner upcoming',style:{marginBottom:20}},
+      React.createElement('span',{className:'term-dot'}),
+      React.createElement('strong',null,(offerings[0]||{}).term_name||'Upcoming Term'),
+      React.createElement('span',{style:{color:'var(--muted)',fontWeight:400}},
+        ` — registration open until ${offerings[0] ? String(offerings[0].registration_end_date||'').slice(0,10) : ''}`
+      )
+    ),
+
+    msg && React.createElement('div',{className:'alert alert-ok'},'✓ '+msg),
+    err && React.createElement('div',{className:'alert alert-err'},'⚠ '+err),
+
+    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 360px',gap:20,alignItems:'start'}},
+
+      // Left: course offerings list to choose from
+      React.createElement('div',{className:'card'},
+        React.createElement('div',{className:'section-title',style:{marginBottom:16}},'Available Course Offerings (Upcoming Term)'),
+        oLoading ? React.createElement(Spinner) :
+        (offerings||[]).length === 0
+          ? React.createElement('div',{style:{textAlign:'center',padding:32,color:'var(--muted)'}},
+              'No course offerings available in an upcoming term with open registration. The registration window may not be open yet.'
+            )
+          : React.createElement('div',{className:'tbl-wrap'},
+            React.createElement('table',null,
+              React.createElement('thead',null,
+                React.createElement('tr',null,
+                  ['Course','Credits','Slots','Has Lab','Sections Already Floated','Select'].map(h=>React.createElement('th',{key:h},h))
+                )
+              ),
+              React.createElement('tbody',null,
+                (offerings||[]).map((o,i)=>
+                  React.createElement('tr',{key:i,style:{background:sel===o.offering_id?'rgba(79,124,255,0.07)':''}},
+                    React.createElement('td',null,
+                      React.createElement('div',{style:{fontWeight:600}},o.course_name),
+                      React.createElement('div',{className:'mono',style:{fontSize:11,color:'var(--muted)'}},o.course_code)
+                    ),
+                    React.createElement('td',{className:'mono'},o.credits),
+                    React.createElement('td',{className:'mono'},
+                      o.theory_slot + (o.lab_slot ? ' / '+o.lab_slot : '')
+                    ),
+                    React.createElement('td',null,
+                      o.has_lab === 'Y'
+                        ? React.createElement(Badge,{type:'blue'},'Yes')
+                        : React.createElement(Badge,{type:'gray'},'No')
+                    ),
+                    React.createElement('td',{className:'mono',style:{textAlign:'center'}}, o.existing_sections||0),
+                    React.createElement('td',null,
+                      React.createElement('button',{
+                        className:`btn btn-sm ${sel===o.offering_id?'btn-primary':'btn-ghost'}`,
+                        onClick:()=>setSel(o.offering_id)
+                      }, sel===o.offering_id ? '✓ Selected' : 'Select')
+                    )
+                  )
+                )
+              )
+            )
+          )
+      ),
+
+      // Right: float form
+      React.createElement('div',{className:'card'},
+        React.createElement('div',{className:'section-title',style:{marginBottom:4}},
+          sel && selOffering ? `Float Section — ${selOffering.course_code}` : 'Section Details'
+        ),
+        !sel && React.createElement('p',{style:{fontSize:13,color:'var(--muted)',marginBottom:16}},'← Select a course offering first'),
+        sel && React.createElement('div',null,
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'Section Code'),
+            React.createElement('input',{
+              value:form.section_code,
+              onChange:e=>setForm(f=>({...f,section_code:e.target.value.toUpperCase()})),
+              placeholder:'e.g. A, B, C',maxLength:10
+            })
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'Max Capacity'),
+            React.createElement('input',{
+              type:'number',min:1,max:200,
+              value:form.max_capacity,
+              onChange:e=>setForm(f=>({...f,max_capacity:e.target.value}))
+            })
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'Waitlist Capacity'),
+            React.createElement('input',{
+              type:'number',min:0,max:50,
+              value:form.waitlist_capacity,
+              onChange:e=>setForm(f=>({...f,waitlist_capacity:e.target.value}))
+            })
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'Theory Room'),
+            React.createElement('input',{
+              value:form.theory_room,
+              onChange:e=>setForm(f=>({...f,theory_room:e.target.value})),
+              placeholder:'e.g. SB-301'
+            })
+          ),
+          selOffering && selOffering.has_lab === 'Y' && React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'Lab Room'),
+            React.createElement('input',{
+              value:form.lab_room,
+              onChange:e=>setForm(f=>({...f,lab_room:e.target.value})),
+              placeholder:'e.g. LAB-101'
+            })
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'Theory Classes Planned'),
+            React.createElement('input',{
+              type:'number',min:0,
+              value:form.total_theory_classes_planned,
+              onChange:e=>setForm(f=>({...f,total_theory_classes_planned:e.target.value}))
+            })
+          ),
+          selOffering && selOffering.has_lab === 'Y' && React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'Lab Classes Planned'),
+            React.createElement('input',{
+              type:'number',min:0,
+              value:form.total_lab_classes_planned,
+              onChange:e=>setForm(f=>({...f,total_lab_classes_planned:e.target.value}))
+            })
+          ),
+          React.createElement('button',{
+            className:'btn btn-primary',
+            onClick:handleFloat,
+            disabled:submitting,
+            style:{width:'100%',justifyContent:'center',marginTop:4}
+          }, submitting ? 'Creating…' : '⊕ Float Section')
+        )
+      )
+    ),
+
+    // My floated sections for upcoming term
+    upcomingSecs.length > 0 && React.createElement('div',{className:'card',style:{marginTop:24}},
+      React.createElement('div',{className:'section-title',style:{marginBottom:16}},'My Floated Sections (Upcoming Term)'),
+      React.createElement('div',{className:'tbl-wrap'},
+        React.createElement('table',null,
+          React.createElement('thead',null,
+            React.createElement('tr',null,
+              ['Course','Section','Capacity','Enrolled','Waitlist','Theory Room','Lab Room'].map(h=>React.createElement('th',{key:h},h))
+            )
+          ),
+          React.createElement('tbody',null,
+            upcomingSecs.map((s,i)=>
+              React.createElement('tr',{key:i},
+                React.createElement('td',null,
+                  React.createElement('div',{style:{fontWeight:600}},s.course_name),
+                  React.createElement('div',{className:'mono',style:{fontSize:11,color:'var(--muted)'}},s.course_code)
+                ),
+                React.createElement('td',{className:'mono'},s.section_code),
+                React.createElement('td',{className:'mono'},s.max_capacity),
+                React.createElement('td',{className:'mono'},s.current_enrollment),
+                React.createElement('td',{className:'mono'},s.current_waitlist),
+                React.createElement('td',null,s.theory_room||'—'),
+                React.createElement('td',null,s.lab_room||'—'),
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — SHARED HELPERS
+// ─────────────────────────────────────────────────────────────────
+const ADMIN_PAGES = [
+  { id: 'dashboard',         icon: '◈',  label: 'Dashboard'       },
+  { id: 'students',          icon: '👨‍🎓', label: 'Students'        },
+  { id: 'register-student',  icon: '⊕',  label: 'Add Student'     },
+  { id: 'faculty',           icon: '👨‍🏫', label: 'Faculty'         },
+  { id: 'register-faculty',  icon: '⊕',  label: 'Add Faculty'     },
+  { id: 'create-course',     icon: '➕',  label: 'Create Course'   },
+  { id: 'offerings',         icon: '📘',  label: 'Float Course'    },
+  { id: 'terms',             icon: '📅',  label: 'Terms'           },
+];
+
+function AdminFormInput({ label, value, onChange, type='text', placeholder='', required=false, children }) {
+  return React.createElement('div', { className: 'form-group' },
+    React.createElement('label', null, label, required && React.createElement('span',{style:{color:'var(--red)',marginLeft:4}},'*')),
+    children || React.createElement('input', { type, value, onChange: e => onChange(e.target.value), placeholder, required })
+  );
+}
+
+function AdminFormSelect({ label, value, onChange, options, required=false }) {
+  return React.createElement('div', { className: 'form-group' },
+    React.createElement('label', null, label, required && React.createElement('span',{style:{color:'var(--red)',marginLeft:4}},'*')),
+    React.createElement('select', { value, onChange: e => onChange(e.target.value), required,
+      style: { width:'100%', padding:'10px 12px', background:'var(--surface2)', border:'1px solid var(--border)',
+               borderRadius:8, color:'var(--text)', fontFamily:'var(--font)', fontSize:14 } },
+      React.createElement('option', { value:'' }, '— select —'),
+      options.map(o => React.createElement('option', { key: o.value, value: o.value }, o.label))
+    )
+  );
+}
+
+function AdminAlert({ type, msg }) {
+  if (!msg) return null;
+  return React.createElement('div', {
+    className: `alert alert-${type === 'ok' ? 'info' : 'err'}`,
+    style: { marginBottom: 16, background: type === 'ok' ? 'rgba(34,197,94,0.12)' : undefined,
+             borderColor: type === 'ok' ? 'var(--green)' : undefined,
+             color: type === 'ok' ? 'var(--green)' : undefined }
+  }, (type === 'ok' ? '✓ ' : '⚠ ') + msg);
+}
+
+function StatCard({ label, value, sub, color }) {
+  return React.createElement('div', { className: 'stat-card' },
+    React.createElement('div', { className: 'stat-value', style: { color } }, value),
+    React.createElement('div', { className: 'stat-label' }, label),
+    sub && React.createElement('div', { className: 'stat-sub' }, sub)
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN DASHBOARD
+// ─────────────────────────────────────────────────────────────────
+function AdminDashboard({ auth }) {
+  const { data: students, loading: ls } = useData(() => apiFetch('/admin/students'));
+  const { data: faculty,  loading: lf } = useData(() => apiFetch('/admin/faculty'));
+  const { data: terms,    loading: lt } = useData(() => apiFetch('/admin/terms'));
+  const { data: offerings,loading: lo } = useData(() => apiFetch('/admin/offerings'));
+
+  if (ls || lf || lt || lo) return React.createElement(Spinner);
+
+  const activeStudents = (students||[]).filter(s => s.is_active === 'Y').length;
+  const activeFaculty  = (faculty||[]).filter(f => f.is_active === 'Y').length;
+  const currentTerm    = (terms||[]).find(t => t.is_current === 'Y');
+  const upcomingTerms  = (terms||[]).filter(t => t.term_status === 'UPCOMING' || t.term_status === 'REG_OPEN');
+  const totalOfferings = (offerings||[]).length;
+  const totalEnrolled  = (offerings||[]).reduce((s,o) => s + (Number(o.total_enrolled)||0), 0);
+
+  // Dept breakdown of students
+  const deptMap = {};
+  (students||[]).forEach(s => {
+    const d = s.dept_name || 'Unknown';
+    deptMap[d] = (deptMap[d]||0) + 1;
+  });
+  const deptData = Object.entries(deptMap).map(([name, count]) => ({ name: name.replace('Engineering','Eng.'), count }));
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'page-header' },
+      React.createElement('div', { className: 'page-title' }, `Welcome, ${(auth.name||'Admin').split(' ')[0]} 🔐`),
+      React.createElement('div', { className: 'page-sub' }, 'System-wide academic overview')
+    ),
+
+    currentTerm && React.createElement('div', { className: 'term-banner active', style:{marginBottom:20} },
+      React.createElement('span',{className:'term-dot'}),
+      React.createElement('strong', null, currentTerm.term_name),
+      React.createElement('span',{style:{color:'var(--muted)',fontWeight:400}},' — Active Term · ',
+        currentTerm.academic_year)
+    ),
+
+    upcomingTerms.length > 0 && React.createElement('div', { className:'alert alert-info', style:{marginBottom:20} },
+      `📅 ${upcomingTerms.length} upcoming term(s) in preparation. Registration ${upcomingTerms[0].term_status === 'REG_OPEN' ? 'window is OPEN' : 'not yet open'}.`
+    ),
+
+    React.createElement('div', { className: 'card-grid grid-4', style:{marginBottom:28} },
+      [
+        { label:'Active Students',  value: activeStudents, sub:`${(students||[]).length} total`, color:'var(--accent)'  },
+        { label:'Active Faculty',   value: activeFaculty,  sub:`${(faculty||[]).length} total`,  color:'var(--accent2)' },
+        { label:'Course Offerings', value: totalOfferings, sub:'current + upcoming',              color:'var(--green)'  },
+        { label:'Total Enrolled',   value: totalEnrolled,  sub:'across all offerings',            color:'var(--yellow)' },
+      ].map((s,i) => React.createElement(StatCard, { key:i, ...s }))
+    ),
+
+    React.createElement('div', { className: 'card-grid', style:{gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:28} },
+
+      // Dept bar chart
+      React.createElement('div', { className: 'card' },
+        React.createElement('div', { className: 'card-header' },
+          React.createElement('div', { className: 'card-title' }, '👨‍🎓 Students by Department')
+        ),
+        React.createElement('div', { className: 'card-body' },
+          deptData.length > 0
+            ? React.createElement(BarChart, { width:380, height:200, data:deptData,
+                margin:{top:10,right:10,left:-10,bottom:30} },
+                React.createElement(XAxis, { dataKey:'name', tick:{fontSize:10,fill:'var(--muted)'}, angle:-20, textAnchor:'end' }),
+                React.createElement(YAxis, { tick:{fontSize:10,fill:'var(--muted)'} }),
+                React.createElement(Tooltip, { contentStyle:{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8} }),
+                React.createElement(Bar, { dataKey:'count', fill:'var(--accent)', radius:[4,4,0,0] })
+              )
+            : React.createElement('div', {style:{color:'var(--muted)',textAlign:'center',padding:40}}, 'No data')
+        )
+      ),
+
+      // Terms list
+      React.createElement('div', { className: 'card' },
+        React.createElement('div', { className: 'card-header' },
+          React.createElement('div', { className: 'card-title' }, '📅 Academic Terms')
+        ),
+        React.createElement('div', { className: 'card-body' },
+          React.createElement('table', { className: 'data-table' },
+            React.createElement('thead', null, React.createElement('tr', null,
+              ['Term','Year','Status'].map(h => React.createElement('th', {key:h}, h))
+            )),
+            React.createElement('tbody', null,
+              (terms||[]).slice(0,6).map((t,i) =>
+                React.createElement('tr', {key:i},
+                  React.createElement('td', null, t.term_name),
+                  React.createElement('td', null, t.academic_year),
+                  React.createElement('td', null,
+                    React.createElement(Badge, {
+                      type: t.term_status==='ACTIVE'?'green': t.term_status==='REG_OPEN'?'yellow':'gray'
+                    }, t.term_status)
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — STUDENTS LIST
+// ─────────────────────────────────────────────────────────────────
+function AdminStudents() {
+  const { data, loading, error, reload } = useData(() => apiFetch('/admin/students'));
+  const [search, setSearch] = useState('');
+  const [filterDept, setFilterDept] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [toggling, setToggling] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const depts = [...new Set((data||[]).map(s => s.dept_name))].sort();
+
+  const filtered = (data||[]).filter(s => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || s.roll_number.toLowerCase().includes(q) ||
+      (s.full_name||'').toLowerCase().includes(q) ||
+      (s.email||'').toLowerCase().includes(q);
+    const matchDept   = !filterDept   || s.dept_name === filterDept;
+    const matchStatus = !filterStatus || s.is_active === filterStatus;
+    return matchSearch && matchDept && matchStatus;
+  });
+
+  async function toggleStatus(s) {
+    setToggling(s.student_id); setMsg(null);
+    try {
+      const newStatus = s.is_active === 'Y' ? 'N' : 'Y';
+      const res = await apiFetch(`/admin/students/${s.student_id}/status`, {
+        method:'PATCH', body: JSON.stringify({ is_active: newStatus })
+      });
+      setMsg({ type:'ok', text: res.message });
+      reload();
+    } catch(e) { setMsg({ type:'err', text: e.message }); }
+    finally { setToggling(null); }
+  }
+
+  async function viewDetail(id) {
+    setSelected(id); setDetailLoading(true); setDetail(null);
+    try { setDetail(await apiFetch(`/admin/students/${id}`)); }
+    catch(e) { setDetail({ _error: e.message }); }
+    finally { setDetailLoading(false); }
+  }
+
+  if (loading) return React.createElement(Spinner);
+
+  return React.createElement('div', null,
+    React.createElement('div', { className:'page-header' },
+      React.createElement('div', { className:'page-title' }, '👨‍🎓 Students'),
+      React.createElement('div', { className:'page-sub' }, `${(data||[]).length} total registered students`)
+    ),
+
+    msg && React.createElement(AdminAlert, { type: msg.type, msg: msg.text }),
+    error && React.createElement(AdminAlert, { type:'err', msg: error }),
+
+    // Filters
+    React.createElement('div', { className:'card', style:{marginBottom:20} },
+      React.createElement('div', { className:'card-body' },
+        React.createElement('div', { style:{display:'flex', gap:12, flexWrap:'wrap', alignItems:'flex-end'} },
+          React.createElement('div', { style:{flex:'1 1 200px'} },
+            React.createElement('input', { placeholder:'Search name / roll / email…', value:search,
+              onChange:e=>setSearch(e.target.value),
+              style:{width:'100%',padding:'9px 12px',background:'var(--surface2)',border:'1px solid var(--border)',
+                     borderRadius:8,color:'var(--text)',fontFamily:'var(--font)',fontSize:14} })
+          ),
+          React.createElement('div', { style:{flex:'0 0 auto'} },
+            React.createElement('select', {
+              value:filterDept, onChange:e=>setFilterDept(e.target.value),
+              style:{padding:'9px 12px',background:'var(--surface2)',border:'1px solid var(--border)',
+                     borderRadius:8,color:'var(--text)',fontFamily:'var(--font)',fontSize:14} },
+              React.createElement('option',{value:''},'All Depts'),
+              depts.map(d => React.createElement('option',{key:d,value:d},d.replace(' Engineering','').replace(' & ',' & ')))
+            )
+          ),
+          React.createElement('div', { style:{flex:'0 0 auto'} },
+            React.createElement('select', {
+              value:filterStatus, onChange:e=>setFilterStatus(e.target.value),
+              style:{padding:'9px 12px',background:'var(--surface2)',border:'1px solid var(--border)',
+                     borderRadius:8,color:'var(--text)',fontFamily:'var(--font)',fontSize:14} },
+              React.createElement('option',{value:''},'All Status'),
+              React.createElement('option',{value:'Y'},'Active'),
+              React.createElement('option',{value:'N'},'Inactive')
+            )
+          )
+        )
+      )
+    ),
+
+    // Two-pane layout
+    React.createElement('div', { style:{display:'grid', gridTemplateColumns: selected ? '1fr 380px' : '1fr', gap:20} },
+
+      // Table
+      React.createElement('div', { className:'card' },
+        React.createElement('div', { className:'card-body', style:{padding:0} },
+          React.createElement('table', { className:'data-table' },
+            React.createElement('thead', null, React.createElement('tr', null,
+              ['Roll No','Name','Dept','Batch','Sem','Enrollments','Status','Actions'].map(h =>
+                React.createElement('th',{key:h},h))
+            )),
+            React.createElement('tbody', null,
+              filtered.length === 0
+                ? React.createElement('tr', null, React.createElement('td',{colSpan:8,style:{textAlign:'center',color:'var(--muted)',padding:32}},'No students found'))
+                : filtered.map(s =>
+                  React.createElement('tr', { key:s.student_id,
+                    style:{cursor:'pointer', background: selected===s.student_id ? 'rgba(79,124,255,0.08)':undefined },
+                    onClick:() => selected===s.student_id ? setSelected(null) : viewDetail(s.student_id) },
+                    React.createElement('td', null, React.createElement('code',{style:{fontSize:12}}, s.roll_number)),
+                    React.createElement('td', null, s.full_name),
+                    React.createElement('td', null, (s.dept_code||s.dept_name||'').split(' ')[0]),
+                    React.createElement('td', null, s.batch_code),
+                    React.createElement('td', null, s.current_semester),
+                    React.createElement('td', null,
+                      React.createElement('span', { style:{
+                        background:'rgba(79,124,255,0.12)', color:'var(--accent)',
+                        borderRadius:12, padding:'2px 10px', fontSize:12, fontWeight:600 }},
+                        s.active_enrollments || 0
+                      )
+                    ),
+                    React.createElement('td', null,
+                      React.createElement(Badge, { type: s.is_active==='Y'?'green':'gray' },
+                        s.is_active==='Y'?'Active':'Inactive')
+                    ),
+                    React.createElement('td', { onClick:e=>e.stopPropagation() },
+                      React.createElement('button', {
+                        className:`btn btn-sm ${s.is_active==='Y'?'btn-warn':'btn-primary'}`,
+                        disabled: toggling===s.student_id,
+                        onClick: ()=>toggleStatus(s),
+                        style:{fontSize:11,padding:'4px 10px'}
+                      }, toggling===s.student_id ? '…' : (s.is_active==='Y'?'Deactivate':'Activate'))
+                    )
+                  )
+                )
+            )
+          )
+        )
+      ),
+
+      // Detail pane
+      selected && React.createElement('div', { className:'card' },
+        React.createElement('div', { className:'card-header', style:{justifyContent:'space-between'} },
+          React.createElement('div', { className:'card-title' }, 'Student Profile'),
+          React.createElement('button', { className:'btn btn-sm', style:{padding:'4px 10px'},
+            onClick:()=>{setSelected(null);setDetail(null);} }, '✕')
+        ),
+        React.createElement('div', { className:'card-body' },
+          detailLoading ? React.createElement(Spinner) :
+          !detail ? null :
+          detail._error ? React.createElement(AdminAlert,{type:'err',msg:detail._error}) :
+          React.createElement('div', null,
+            React.createElement('div', { style:{marginBottom:16} },
+              [
+                ['Roll No', detail.roll_number],
+                ['Name', detail.full_name],
+                ['Email', detail.email],
+                ['Phone', detail.phone||'—'],
+                ['Program', detail.program_name],
+                ['Batch', detail.batch_code],
+                ['Semester', detail.current_semester],
+                ['D.O.B', detail.date_of_birth ? new Date(detail.date_of_birth).toLocaleDateString() : '—'],
+                ['Enrolled', detail.enrollment_date ? new Date(detail.enrollment_date).toLocaleDateString() : '—'],
+              ].map(([k,v]) =>
+                React.createElement('div', { key:k, style:{display:'flex',justifyContent:'space-between',
+                  padding:'6px 0', borderBottom:'1px solid var(--border)',fontSize:13} },
+                  React.createElement('span',{style:{color:'var(--muted)'}},k),
+                  React.createElement('span',{style:{fontWeight:500,maxWidth:200,textAlign:'right',wordBreak:'break-all'}},v)
+                )
+              )
+            ),
+            React.createElement('div', { style:{marginTop:12} },
+              React.createElement('div', { style:{fontSize:12,fontWeight:700,color:'var(--muted)',
+                textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8} }, 'Registration History'),
+              (detail.registration_history||[]).length === 0
+                ? React.createElement('div',{style:{color:'var(--muted)',fontSize:13}},'No registrations')
+                : (detail.registration_history||[]).map((r,i) =>
+                  React.createElement('div', { key:i, style:{fontSize:12,padding:'6px 0',
+                    borderBottom:'1px solid var(--border)'} },
+                    React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:2}},
+                      React.createElement('span',{style:{fontWeight:600}}, r.course_code),
+                      statusBadge(r.registration_status)
+                    ),
+                    React.createElement('div',{style:{color:'var(--muted)'}},
+                      r.course_name + ' · ' + r.term_name)
+                  )
+                )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — REGISTER STUDENT FORM
+// ─────────────────────────────────────────────────────────────────
+function AdminRegisterStudent() {
+  const { data: batches } = useData(() => apiFetch('/admin/batches'));
+  const [form, setForm] = useState({
+    roll_number:'', first_name:'', last_name:'', email:'', phone:'',
+    batch_id:'', current_semester:'1', date_of_birth:''
+  });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  function set(k){ return v => setForm(f => ({...f,[k]:v})); }
+
+  async function submit(e) {
+    e.preventDefault(); setLoading(true); setMsg(null);
+    try {
+      const res = await apiFetch('/admin/students', { method:'POST', body: JSON.stringify({
+        ...form, batch_id: Number(form.batch_id), current_semester: Number(form.current_semester),
+        date_of_birth: form.date_of_birth || null
+      })});
+      setMsg({ type:'ok', text: res.message });
+      setForm({ roll_number:'', first_name:'', last_name:'', email:'', phone:'',
+                batch_id:'', current_semester:'1', date_of_birth:'' });
+    } catch(e) { setMsg({ type:'err', text: e.message }); }
+    finally { setLoading(false); }
+  }
+
+  const batchOptions = (batches||[]).map(b => ({ value: b.batch_id, label: `${b.batch_code} — ${b.program_name}` }));
+
+  return React.createElement('div', null,
+    React.createElement('div', { className:'page-header' },
+      React.createElement('div', { className:'page-title' }, '⊕ Register New Student'),
+      React.createElement('div', { className:'page-sub' }, 'Calls admin_manager.register_student() package procedure')
+    ),
+    React.createElement('div', { className:'card', style:{maxWidth:640} },
+      React.createElement('div', { className:'card-header' },
+        React.createElement('div', { className:'card-title' }, 'Student Details')
+      ),
+      React.createElement('div', { className:'card-body' },
+        msg && React.createElement(AdminAlert, { type:msg.type, msg:msg.text }),
+        React.createElement('form', { onSubmit: submit },
+          React.createElement('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16} },
+            React.createElement(AdminFormInput,{label:'Roll Number',value:form.roll_number,onChange:set('roll_number'),placeholder:'e.g. 2024BCS099',required:true}),
+            React.createElement(AdminFormInput,{label:'First Name',value:form.first_name,onChange:set('first_name'),required:true}),
+            React.createElement(AdminFormInput,{label:'Last Name',value:form.last_name,onChange:set('last_name')}),
+            React.createElement(AdminFormInput,{label:'Email',value:form.email,onChange:set('email'),type:'email',required:true}),
+            React.createElement(AdminFormInput,{label:'Phone',value:form.phone,onChange:set('phone'),placeholder:'10-digit'}),
+            React.createElement(AdminFormInput,{label:'Date of Birth',value:form.date_of_birth,onChange:set('date_of_birth'),type:'date'}),
+          ),
+          React.createElement(AdminFormSelect,{label:'Batch',value:form.batch_id,onChange:set('batch_id'),options:batchOptions,required:true}),
+          React.createElement(AdminFormInput,{label:'Current Semester',value:form.current_semester,onChange:set('current_semester'),type:'number',required:true}),
+          React.createElement('div', { style:{marginTop:20} },
+            React.createElement('button', { className:'btn btn-primary', type:'submit', disabled:loading },
+              loading ? 'Registering…' : 'Register Student →')
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — FACULTY LIST
+// ─────────────────────────────────────────────────────────────────
+function AdminFaculty() {
+  const { data, loading, error, reload } = useData(() => apiFetch('/admin/faculty'));
+  const { data: deptsList } = useData(() => apiFetch('/admin/departments'));
+  const [search, setSearch] = useState('');
+  const [filterDept, setFilterDept] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [toggling, setToggling] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const filtered = (data||[]).filter(f => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || f.employee_id.toLowerCase().includes(q) ||
+      (f.full_name||'').toLowerCase().includes(q) || (f.email||'').toLowerCase().includes(q);
+    const matchDept   = !filterDept   || f.dept_name === filterDept;
+    const matchStatus = !filterStatus || f.is_active === filterStatus;
+    return matchSearch && matchDept && matchStatus;
+  });
+
+  async function toggleStatus(f) {
+    setToggling(f.faculty_id); setMsg(null);
+    try {
+      const newStatus = f.is_active === 'Y' ? 'N' : 'Y';
+      const res = await apiFetch(`/admin/faculty/${f.faculty_id}/status`, {
+        method:'PATCH', body: JSON.stringify({ is_active: newStatus })
+      });
+      setMsg({ type:'ok', text: res.message }); reload();
+    } catch(e) { setMsg({ type:'err', text: e.message }); }
+    finally { setToggling(null); }
+  }
+
+  async function viewDetail(id) {
+    setSelected(id); setDetailLoading(true); setDetail(null);
+    try { setDetail(await apiFetch(`/admin/faculty/${id}`)); }
+    catch(e) { setDetail({ _error: e.message }); }
+    finally { setDetailLoading(false); }
+  }
+
+  if (loading) return React.createElement(Spinner);
+
+  const depts = [...new Set((data||[]).map(f => f.dept_name))].sort();
+
+  return React.createElement('div', null,
+    React.createElement('div', { className:'page-header' },
+      React.createElement('div', { className:'page-title' }, '👨‍🏫 Faculty'),
+      React.createElement('div', { className:'page-sub' }, `${(data||[]).length} total faculty members`)
+    ),
+
+    msg && React.createElement(AdminAlert, { type:msg.type, msg:msg.text }),
+    error && React.createElement(AdminAlert, { type:'err', msg:error }),
+
+    // Filters
+    React.createElement('div', { className:'card', style:{marginBottom:20} },
+      React.createElement('div', { className:'card-body' },
+        React.createElement('div', { style:{display:'flex',gap:12,flexWrap:'wrap',alignItems:'flex-end'} },
+          React.createElement('div', { style:{flex:'1 1 200px'} },
+            React.createElement('input', { placeholder:'Search name / ID / email…', value:search,
+              onChange:e=>setSearch(e.target.value),
+              style:{width:'100%',padding:'9px 12px',background:'var(--surface2)',border:'1px solid var(--border)',
+                     borderRadius:8,color:'var(--text)',fontFamily:'var(--font)',fontSize:14} })
+          ),
+          React.createElement('div', { style:{flex:'0 0 auto'} },
+            React.createElement('select', {
+              value:filterDept, onChange:e=>setFilterDept(e.target.value),
+              style:{padding:'9px 12px',background:'var(--surface2)',border:'1px solid var(--border)',
+                     borderRadius:8,color:'var(--text)',fontFamily:'var(--font)',fontSize:14} },
+              React.createElement('option',{value:''},'All Depts'),
+              depts.map(d => React.createElement('option',{key:d,value:d},d.replace(' Engineering','')))
+            )
+          ),
+          React.createElement('div', { style:{flex:'0 0 auto'} },
+            React.createElement('select', {
+              value:filterStatus, onChange:e=>setFilterStatus(e.target.value),
+              style:{padding:'9px 12px',background:'var(--surface2)',border:'1px solid var(--border)',
+                     borderRadius:8,color:'var(--text)',fontFamily:'var(--font)',fontSize:14} },
+              React.createElement('option',{value:''},'All Status'),
+              React.createElement('option',{value:'Y'},'Active'),
+              React.createElement('option',{value:'N'},'Inactive')
+            )
+          )
+        )
+      )
+    ),
+
+    React.createElement('div', { style:{display:'grid', gridTemplateColumns: selected?'1fr 360px':'1fr', gap:20} },
+
+      React.createElement('div', { className:'card' },
+        React.createElement('div', { className:'card-body', style:{padding:0} },
+          React.createElement('table', { className:'data-table' },
+            React.createElement('thead', null, React.createElement('tr', null,
+              ['Emp ID','Name','Dept','Designation','Sections','Status','Actions'].map(h =>
+                React.createElement('th',{key:h},h))
+            )),
+            React.createElement('tbody', null,
+              filtered.length === 0
+                ? React.createElement('tr',null,React.createElement('td',{colSpan:7,style:{textAlign:'center',color:'var(--muted)',padding:32}},'No faculty found'))
+                : filtered.map(f =>
+                  React.createElement('tr', { key:f.faculty_id,
+                    style:{cursor:'pointer',background:selected===f.faculty_id?'rgba(79,124,255,0.08)':undefined},
+                    onClick:()=>selected===f.faculty_id?setSelected(null):viewDetail(f.faculty_id) },
+                    React.createElement('td', null, React.createElement('code',{style:{fontSize:12}},f.employee_id)),
+                    React.createElement('td', null, f.full_name),
+                    React.createElement('td', null, f.dept_code),
+                    React.createElement('td', null, React.createElement('span',{style:{fontSize:12,color:'var(--muted)'}},f.designation||'—')),
+                    React.createElement('td', null,
+                      React.createElement('span',{style:{background:'rgba(79,124,255,0.12)',color:'var(--accent)',
+                        borderRadius:12,padding:'2px 10px',fontSize:12,fontWeight:600}},
+                        f.active_sections||0)
+                    ),
+                    React.createElement('td', null,
+                      React.createElement(Badge,{type:f.is_active==='Y'?'green':'gray'},f.is_active==='Y'?'Active':'Inactive')
+                    ),
+                    React.createElement('td', { onClick:e=>e.stopPropagation() },
+                      React.createElement('button', {
+                        className:`btn btn-sm ${f.is_active==='Y'?'btn-warn':'btn-primary'}`,
+                        disabled:toggling===f.faculty_id,
+                        onClick:()=>toggleStatus(f),
+                        style:{fontSize:11,padding:'4px 10px'}
+                      }, toggling===f.faculty_id?'…':(f.is_active==='Y'?'Deactivate':'Activate'))
+                    )
+                  )
+                )
+            )
+          )
+        )
+      ),
+
+      selected && React.createElement('div', { className:'card' },
+        React.createElement('div', { className:'card-header', style:{justifyContent:'space-between'} },
+          React.createElement('div', { className:'card-title' }, 'Faculty Profile'),
+          React.createElement('button', { className:'btn btn-sm', style:{padding:'4px 10px'},
+            onClick:()=>{setSelected(null);setDetail(null);} }, '✕')
+        ),
+        React.createElement('div', { className:'card-body' },
+          detailLoading ? React.createElement(Spinner) :
+          !detail ? null :
+          detail._error ? React.createElement(AdminAlert,{type:'err',msg:detail._error}) :
+          React.createElement('div', null,
+            [
+              ['Emp ID', detail.employee_id],
+              ['Name',   detail.full_name],
+              ['Email',  detail.email],
+              ['Phone',  detail.phone||'—'],
+              ['Dept',   detail.dept_name],
+              ['Designation', detail.designation||'—'],
+              ['Specialization', detail.specialization||'—'],
+            ].map(([k,v]) =>
+              React.createElement('div',{key:k,style:{display:'flex',justifyContent:'space-between',
+                padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}},
+                React.createElement('span',{style:{color:'var(--muted)'}},k),
+                React.createElement('span',{style:{fontWeight:500,maxWidth:200,textAlign:'right',wordBreak:'break-all'}},v)
+              )
+            ),
+            React.createElement('div',{style:{marginTop:12}},
+              React.createElement('div',{style:{fontSize:12,fontWeight:700,color:'var(--muted)',
+                textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}},'Sections'),
+              (detail.sections||[]).length===0
+                ? React.createElement('div',{style:{color:'var(--muted)',fontSize:13}},'None')
+                : (detail.sections||[]).map((s,i)=>
+                  React.createElement('div',{key:i,style:{fontSize:12,padding:'5px 0',borderBottom:'1px solid var(--border)'}},
+                    React.createElement('div',{style:{display:'flex',justifyContent:'space-between'}},
+                      React.createElement('span',{style:{fontWeight:600}},s.course_code+' §'+s.section_code),
+                      React.createElement(Badge,{type:s.is_current==='Y'?'green':'gray'},s.term_name)
+                    ),
+                    React.createElement('div',{style:{color:'var(--muted)'}},
+                      s.current_enrollment+'/'+s.max_capacity+' enrolled · '+s.academic_year)
+                  )
+                )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — REGISTER FACULTY FORM
+// ─────────────────────────────────────────────────────────────────
+function AdminRegisterFaculty() {
+  const { data: depts } = useData(() => apiFetch('/admin/departments'));
+  const [form, setForm] = useState({
+    employee_id:'', first_name:'', last_name:'', email:'', phone:'',
+    dept_id:'', designation:'', specialization:''
+  });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  function set(k){ return v => setForm(f=>({...f,[k]:v})); }
+
+  async function submit(e) {
+    e.preventDefault(); setLoading(true); setMsg(null);
+    try {
+      const res = await apiFetch('/admin/faculty', { method:'POST', body: JSON.stringify({
+        ...form, dept_id: Number(form.dept_id)
+      })});
+      setMsg({ type:'ok', text: res.message });
+      setForm({ employee_id:'', first_name:'', last_name:'', email:'', phone:'',
+                dept_id:'', designation:'', specialization:'' });
+    } catch(e) { setMsg({ type:'err', text: e.message }); }
+    finally { setLoading(false); }
+  }
+
+  const deptOptions = (depts||[]).map(d=>({ value:d.dept_id, label:`${d.dept_code} — ${d.dept_name}` }));
+  const DESIGNATIONS = ['Professor','Associate Professor','Assistant Professor','Lecturer','Adjunct Professor']
+    .map(d=>({value:d,label:d}));
+
+  return React.createElement('div', null,
+    React.createElement('div', { className:'page-header' },
+      React.createElement('div', { className:'page-title' }, '⊕ Register New Faculty'),
+      React.createElement('div', { className:'page-sub' }, 'Calls admin_manager.register_faculty() package procedure')
+    ),
+    React.createElement('div', { className:'card', style:{maxWidth:640} },
+      React.createElement('div', { className:'card-header' },
+        React.createElement('div', { className:'card-title' }, 'Faculty Details')
+      ),
+      React.createElement('div', { className:'card-body' },
+        msg && React.createElement(AdminAlert, { type:msg.type, msg:msg.text }),
+        React.createElement('form', { onSubmit:submit },
+          React.createElement('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16} },
+            React.createElement(AdminFormInput,{label:'Employee ID',value:form.employee_id,onChange:set('employee_id'),placeholder:'e.g. F099',required:true}),
+            React.createElement(AdminFormInput,{label:'First Name',value:form.first_name,onChange:set('first_name'),required:true}),
+            React.createElement(AdminFormInput,{label:'Last Name',value:form.last_name,onChange:set('last_name')}),
+            React.createElement(AdminFormInput,{label:'Email',value:form.email,onChange:set('email'),type:'email',required:true}),
+            React.createElement(AdminFormInput,{label:'Phone',value:form.phone,onChange:set('phone')}),
+          ),
+          React.createElement(AdminFormSelect,{label:'Department',value:form.dept_id,onChange:set('dept_id'),options:deptOptions,required:true}),
+          React.createElement(AdminFormSelect,{label:'Designation',value:form.designation,onChange:set('designation'),options:DESIGNATIONS}),
+          React.createElement(AdminFormInput,{label:'Specialization',value:form.specialization,onChange:set('specialization'),placeholder:'e.g. Machine Learning, Networks'}),
+          React.createElement('div',{style:{marginTop:20}},
+            React.createElement('button',{className:'btn btn-primary',type:'submit',disabled:loading},
+              loading?'Registering…':'Register Faculty →')
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — CREATE COURSE
+// Calls POST /api/admin/courses → admin_manager.create_course()
+// Also collects eligibility_rules[] and sends them in the same request
+// so admin_manager.add_course_eligibility_rule() is called per rule.
+// ─────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────
+// PREREQUISITE PICKER sub-component
+// Lets admin search existing courses and mark each as mandatory/optional.
+// ─────────────────────────────────────────────────────────────────
+function PrerequisitePicker({ allCourses, prerequisites, onChange }) {
+  const [search, setSearch] = React.useState('');
+
+  const pickedIds = new Set(prerequisites.map(p => p.prerequisite_course_id));
+
+  function toggleCourse(course) {
+    if (pickedIds.has(course.course_id)) {
+      onChange(prerequisites.filter(p => p.prerequisite_course_id !== course.course_id));
+    } else {
+      onChange([...prerequisites, { prerequisite_course_id: course.course_id, is_mandatory: 'Y' }]);
+    }
+  }
+
+  function setMandatory(course_id, val) {
+    onChange(prerequisites.map(p =>
+      p.prerequisite_course_id === course_id ? { ...p, is_mandatory: val } : p
+    ));
+  }
+
+  const filtered = (allCourses || []).filter(c =>
+    c.is_active !== 'N' &&
+    (!search ||
+      c.course_code.toLowerCase().includes(search.toLowerCase()) ||
+      c.course_name.toLowerCase().includes(search.toLowerCase()))
+  ).slice(0, 40);  // cap list for performance
+
+  const fieldStyle = {
+    padding:'7px 10px', background:'var(--surface)', border:'1px solid var(--border)',
+    borderRadius:6, color:'var(--text)', fontFamily:'var(--font)', fontSize:12, width:'100%'
+  };
+
+  return React.createElement('div', null,
+
+    // Header
+    React.createElement('div', { style:{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 } },
+      React.createElement('div', null,
+        React.createElement('div', { style:{ fontWeight:600, fontSize:13 } }, '🔗 Prerequisites'),
+        React.createElement('div', { style:{ fontSize:11, color:'var(--muted)', marginTop:2 } },
+          prerequisites.length === 0
+            ? 'No prerequisites — course has no entry requirements.'
+            : `${prerequisites.length} prerequisite${prerequisites.length>1?'s':''} selected.`
+        )
+      )
+    ),
+
+    // No-prereqs notice
+    prerequisites.length === 0 && React.createElement('div', {
+      style:{
+        background:'rgba(122,130,153,0.08)', border:'1px solid rgba(122,130,153,0.2)',
+        borderRadius:8, padding:'10px 14px', fontSize:12, color:'var(--muted)', marginBottom:10
+      }
+    }, '✓ No prerequisites — any eligible student may register.'),
+
+    // Picked courses (chips)
+    prerequisites.length > 0 && React.createElement('div', { style:{ marginBottom:10 } },
+      prerequisites.map(p => {
+        const c = (allCourses||[]).find(x => x.course_id === p.prerequisite_course_id);
+        if (!c) return null;
+        return React.createElement('div', {
+          key: p.prerequisite_course_id,
+          style:{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            background:'var(--surface2)', border:'1px solid var(--border2)',
+            borderRadius:7, padding:'8px 12px', marginBottom:6
+          }
+        },
+          React.createElement('div', { style:{ display:'flex', alignItems:'center', gap:8 } },
+            React.createElement('span', { style:{ fontFamily:'var(--mono)', fontSize:12, color:'var(--accent)' } }, c.course_code),
+            React.createElement('span', { style:{ fontSize:12 } }, c.course_name)
+          ),
+          React.createElement('div', { style:{ display:'flex', alignItems:'center', gap:8 } },
+            React.createElement('select', {
+              value: p.is_mandatory, style:{ ...fieldStyle, width:'auto', padding:'4px 8px' },
+              onChange: e => setMandatory(p.prerequisite_course_id, e.target.value)
+            },
+              React.createElement('option', { value:'Y' }, 'Mandatory'),
+              React.createElement('option', { value:'N' }, 'Optional')
+            ),
+            React.createElement('button', {
+              type:'button',
+              onClick: () => onChange(prerequisites.filter(x => x.prerequisite_course_id !== p.prerequisite_course_id)),
+              style:{
+                background:'transparent', border:'1px solid rgba(239,68,68,0.3)',
+                borderRadius:5, color:'var(--red)', fontSize:11, cursor:'pointer',
+                padding:'3px 8px', fontFamily:'var(--font)'
+              }
+            }, '✕')
+          )
+        );
+      })
+    ),
+
+    // Search + list
+    React.createElement('div', {
+      style:{
+        background:'var(--surface2)', border:'1px solid var(--border2)',
+        borderRadius:8, padding:'10px 12px'
+      }
+    },
+      React.createElement('input', {
+        type:'text', placeholder:'🔍 Search course to add as prerequisite…',
+        value: search, onChange: e => setSearch(e.target.value),
+        style:{ ...fieldStyle, marginBottom: filtered.length > 0 ? 8 : 0 }
+      }),
+      search && filtered.length === 0 && React.createElement('div', {
+        style:{ fontSize:12, color:'var(--muted)', paddingTop:6 }
+      }, 'No matching courses found.'),
+      search && filtered.length > 0 && React.createElement('div', {
+        style:{ maxHeight:180, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }
+      },
+        filtered.map(c =>
+          React.createElement('div', {
+            key: c.course_id,
+            onClick: () => toggleCourse(c),
+            style:{
+              display:'flex', alignItems:'center', gap:8,
+              padding:'6px 8px', borderRadius:6, cursor:'pointer',
+              background: pickedIds.has(c.course_id) ? 'rgba(79,124,255,0.12)' : 'transparent',
+              border: pickedIds.has(c.course_id) ? '1px solid rgba(79,124,255,0.3)' : '1px solid transparent',
+              transition:'all 0.12s'
+            }
+          },
+            React.createElement('span', { style:{ fontSize:14 } }, pickedIds.has(c.course_id) ? '☑' : '☐'),
+            React.createElement('span', { style:{ fontFamily:'var(--mono)', fontSize:11, color:'var(--accent)', minWidth:70 } }, c.course_code),
+            React.createElement('span', { style:{ fontSize:12 } }, c.course_name),
+            React.createElement('span', { style:{ fontSize:11, color:'var(--muted)', marginLeft:'auto' } }, c.credits + ' cr')
+          )
+        )
+      )
+    )
+  );
+}
+
+// ── Eligibility Rule Builder sub-component ────────────────────────
+// Lets admin add N rules, each independently specifying dept / program /
+// semester range.  NULL on any dimension = "no restriction on that axis".
+function EligibilityRuleBuilder({ rules, onChange, depts, programs }) {
+  const semOpts = [
+    { value:'', label:'— any —' },
+    ...['1','2','3','4','5','6','7','8'].map(s => ({ value:s, label:`Sem ${s}` }))
+  ];
+  const deptOpts    = [{ value:'', label:'— any dept —' },    ...(depts   ||[]).map(d => ({ value:String(d.dept_id),    label:`${d.dept_code} — ${d.dept_name}` }))];
+  // Show UG / PG as distinct options (deduplicated by program_type)
+  const programTypeOpts = [{ value:'', label:'— any program —' },
+    ...['UG','PG'].filter(pt => (programs||[]).some(p => p.program_type === pt))
+                  .map(pt => ({ value: pt, label: pt }))
+  ];
+
+  function addRule() {
+    onChange([...rules, { dept_id:'', program_type:'', min_semester:'', max_semester:'', priority:'99' }]);
+  }
+  function removeRule(idx) {
+    onChange(rules.filter((_,i) => i !== idx));
+  }
+  function updateRule(idx, key, val) {
+    onChange(rules.map((r,i) => i === idx ? { ...r, [key]: val } : r));
+  }
+
+  const fieldStyle = {
+    padding:'7px 10px', background:'var(--surface)', border:'1px solid var(--border)',
+    borderRadius:6, color:'var(--text)', fontFamily:'var(--font)', fontSize:12, width:'100%'
+  };
+  const labelStyle = { fontSize:10, color:'var(--muted)', marginBottom:3, display:'block', textTransform:'uppercase', letterSpacing:'0.06em' };
+
+  return React.createElement('div', null,
+
+    // Header row
+    React.createElement('div', { style:{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 } },
+      React.createElement('div', null,
+        React.createElement('div', { style:{ fontWeight:600, fontSize:13 } }, '🎓 Eligibility Rules'),
+        React.createElement('div', { style:{ fontSize:11, color:'var(--muted)', marginTop:2 } },
+          rules.length === 0
+            ? 'No rules → course is open to ALL students.'
+            : `${rules.length} rule${rules.length>1?'s':''} — student must match at least one.`
+        )
+      ),
+      React.createElement('button', {
+        type:'button',
+        onClick: addRule,
+        style:{
+          padding:'6px 12px', background:'rgba(79,124,255,0.15)', border:'1px solid rgba(79,124,255,0.3)',
+          borderRadius:6, color:'var(--accent)', fontSize:12, cursor:'pointer', fontFamily:'var(--font)', fontWeight:600
+        }
+      }, '+ Add Rule')
+    ),
+
+    // Open-to-all notice when no rules
+    rules.length === 0 && React.createElement('div', {
+      style:{
+        background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.2)',
+        borderRadius:8, padding:'10px 14px', fontSize:12, color:'var(--green)', marginBottom:4
+      }
+    }, '✓ Open to all students — add a rule below to restrict registration.'),
+
+    // One card per rule
+    rules.map((rule, idx) =>
+      React.createElement('div', {
+        key: idx,
+        style:{
+          background:'var(--surface2)', border:'1px solid var(--border2)',
+          borderRadius:8, padding:'12px 14px', marginBottom:10
+        }
+      },
+        // Rule header
+        React.createElement('div', { style:{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 } },
+          React.createElement('span', { style:{ fontSize:12, fontWeight:600, color:'var(--accent)', fontFamily:'var(--mono)' } },
+            `Rule #${idx+1}`
+          ),
+          React.createElement('button', {
+            type:'button', onClick: () => removeRule(idx),
+            style:{
+              background:'transparent', border:'1px solid rgba(239,68,68,0.3)',
+              borderRadius:5, color:'var(--red)', fontSize:11, cursor:'pointer',
+              padding:'3px 8px', fontFamily:'var(--font)'
+            }
+          }, '✕ Remove')
+        ),
+
+        // Row 1: Dept + Program
+        React.createElement('div', { style:{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 } },
+          React.createElement('div', null,
+            React.createElement('label', { style: labelStyle }, 'Department'),
+            React.createElement('select', {
+              value: rule.dept_id, style: fieldStyle,
+              onChange: e => updateRule(idx, 'dept_id', e.target.value)
+            }, deptOpts.map(o => React.createElement('option', { key:o.value, value:o.value }, o.label)))
+          ),
+          React.createElement('div', null,
+            React.createElement('label', { style: labelStyle }, 'Program Type'),
+            React.createElement('select', {
+              value: rule.program_type, style: fieldStyle,
+              onChange: e => updateRule(idx, 'program_type', e.target.value)
+            }, programTypeOpts.map(o => React.createElement('option', { key:o.value, value:o.value }, o.label)))
+          )
+        ),
+
+        // Row 2: Min Semester + Max Semester + Priority
+        React.createElement('div', { style:{ display:'grid', gridTemplateColumns:'1fr 1fr 80px', gap:10 } },
+          React.createElement('div', null,
+            React.createElement('label', { style: labelStyle }, 'Min Semester'),
+            React.createElement('select', {
+              value: rule.min_semester, style: fieldStyle,
+              onChange: e => updateRule(idx, 'min_semester', e.target.value)
+            }, semOpts.map(o => React.createElement('option', { key:o.value, value:o.value }, o.label)))
+          ),
+          React.createElement('div', null,
+            React.createElement('label', { style: labelStyle }, 'Max Semester'),
+            React.createElement('select', {
+              value: rule.max_semester, style: fieldStyle,
+              onChange: e => updateRule(idx, 'max_semester', e.target.value)
+            }, semOpts.map(o => React.createElement('option', { key:o.value, value:o.value }, o.label)))
+          ),
+          React.createElement('div', null,
+            React.createElement('label', { style: labelStyle }, 'Priority'),
+            React.createElement('input', {
+              type:'number', min:1, max:100, value: rule.priority, style: fieldStyle,
+              onChange: e => updateRule(idx, 'priority', e.target.value)
+            })
+          )
+        ),
+
+        // Inline summary of what this rule means
+        React.createElement('div', { style:{ marginTop:8, fontSize:11, color:'var(--muted)', fontFamily:'var(--mono)' } },
+          (() => {
+            const parts = [];
+            if (rule.dept_id)       parts.push((depts||[]).find(d=>String(d.dept_id)===rule.dept_id)?.dept_code || `dept #${rule.dept_id}`);
+            if (rule.program_type)  parts.push(rule.program_type);
+            const minS = rule.min_semester, maxS = rule.max_semester;
+            if (minS && maxS)    parts.push(`sem ${minS}–${maxS}`);
+            else if (minS)       parts.push(`sem ≥ ${minS}`);
+            else if (maxS)       parts.push(`sem ≤ ${maxS}`);
+            return parts.length ? `→ ${parts.join(', ')}` : '→ matches any student (no filters set)';
+          })()
+        )
+      )
+    )
+  );
+}
+
+function AdminCreateCourse() {
+  const { data: depts }    = useData(() => apiFetch('/admin/departments'));
+  const { data: programs } = useData(() => apiFetch('/admin/programs').catch(() => []));
+  const { data: existing, reload: reloadCourses } = useData(() => apiFetch('/admin/courses'));
+
+  const emptyForm = {
+    course_code:'', course_name:'', dept_id:'', course_type:'DC',
+    credits:'', lecture_hours:'3', tutorial_hours:'0', practical_hours:'0',
+    has_lab:'N', typical_semester:'', max_sections:'3', description:''
+  };
+  const [form, setForm]             = useState(emptyForm);
+  const [eligibilityRules, setRules] = useState([]);
+  const [prerequisites, setPrereqs] = useState([]);   // [{prerequisite_course_id, is_mandatory}]
+  const [loading, setLoading]       = useState(false);
+  const [msg, setMsg]               = useState(null);
+
+  function set(k){ return v => setForm(f => ({ ...f, [k]: v })); }
+
+  function setHasLab(v) {
+    setForm(f => ({
+      ...f,
+      has_lab: v,
+      practical_hours: v === 'Y' ? (f.practical_hours === '0' ? '2' : f.practical_hours) : '0'
+    }));
+  }
+
+  const deptOptions = (depts||[]).map(d => ({ value: d.dept_id, label: `${d.dept_code} — ${d.dept_name}` }));
+  const typeOptions = ['DC','DE','OC','HM','BS','ES','AU'].map(t => ({ value:t, label:t }));
+  const semOptions  = ['','1','2','3','4','5','6','7','8'].map(s => ({ value:s, label: s===''?'— not specified —':s }));
+  const labOptions  = [{ value:'N', label:'No' }, { value:'Y', label:'Yes' }];
+  const maxSecOpts  = ['1','2','3','4','5','6','7','8','9','10'].map(n => ({ value:n, label:n }));
+
+  async function submit(e) {
+    e.preventDefault(); setLoading(true); setMsg(null);
+
+    // Client-side validation
+    if (form.has_lab === 'Y' && Number(form.practical_hours) === 0) {
+      setMsg({ type:'err', text:'practical_hours must be > 0 when Has Lab = Yes.' });
+      setLoading(false); return;
+    }
+    if (form.has_lab === 'N' && Number(form.practical_hours) > 0) {
+      setMsg({ type:'err', text:'practical_hours must be 0 when Has Lab = No.' });
+      setLoading(false); return;
+    }
+    for (let i = 0; i < eligibilityRules.length; i++) {
+      const r = eligibilityRules[i];
+      const minS = r.min_semester ? Number(r.min_semester) : null;
+      const maxS = r.max_semester ? Number(r.max_semester) : null;
+      if (minS && maxS && minS > maxS) {
+        setMsg({ type:'err', text:`Rule #${i+1}: Min Semester cannot exceed Max Semester.` });
+        setLoading(false); return;
+      }
+    }
+
+    try {
+      // Build the eligibility_rules array — only include fields that were set
+      const builtRules = eligibilityRules.map(r => ({
+        dept_id:      r.dept_id      ? Number(r.dept_id)      : null,
+        program_type: r.program_type || null,
+        min_semester: r.min_semester ? Number(r.min_semester) : null,
+        max_semester: r.max_semester ? Number(r.max_semester) : null,
+        priority:     r.priority     ? Number(r.priority)     : 99,
+      }));
+
+      // Build prerequisites array
+      const builtPrereqs = prerequisites.map(p => ({
+        prerequisite_course_id: p.prerequisite_course_id,
+        is_mandatory:           p.is_mandatory || 'Y',
+      }));
+
+      const res = await apiFetch('/admin/courses', { method:'POST', body: JSON.stringify({
+        course_code:       form.course_code.trim().toUpperCase(),
+        course_name:       form.course_name.trim(),
+        dept_id:           Number(form.dept_id),
+        course_type:       form.course_type,
+        credits:           Number(form.credits),
+        lecture_hours:     Number(form.lecture_hours),
+        tutorial_hours:    Number(form.tutorial_hours),
+        practical_hours:   Number(form.practical_hours),
+        has_lab:           form.has_lab,
+        typical_semester:  form.typical_semester ? Number(form.typical_semester) : null,
+        max_sections:      Number(form.max_sections),
+        description:       form.description.trim() || null,
+        eligibility_rules: builtRules,
+        prerequisites:     builtPrereqs,
+      })});
+
+      const ruleCount   = (res.eligibility_rules||[]).length;
+      const prereqCount = (res.prerequisites||[]).length;
+      setMsg({
+        type:'ok',
+        text: res.message
+          + (ruleCount   > 0 ? ` · ${ruleCount} eligibility rule${ruleCount>1?'s':''} saved.`   : ' · Open to all students.')
+          + (prereqCount > 0 ? ` · ${prereqCount} prerequisite${prereqCount>1?'s':''} linked.` : '')
+      });
+      setForm(emptyForm);
+      setRules([]);
+      setPrereqs([]);
+      reloadCourses();
+    } catch(err) { setMsg({ type:'err', text: err.message }); }
+    finally { setLoading(false); }
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', { className:'page-header' },
+      React.createElement('div', { className:'page-title' }, '➕ Create New Course'),
+      React.createElement('div', { className:'page-sub' }, 'Creates course + eligibility rules in one atomic transaction')
+    ),
+
+    React.createElement('div', { style:{ display:'grid', gridTemplateColumns:'1fr 1.4fr', gap:20, alignItems:'start' } },
+
+      // ── Form card ──────────────────────────────────────────────
+      React.createElement('div', { className:'card' },
+        React.createElement('div', { className:'card-header' },
+          React.createElement('div', { className:'card-title' }, 'Course Details')
+        ),
+        React.createElement('div', { className:'card-body' },
+          msg && React.createElement(AdminAlert, { type:msg.type, msg:msg.text }),
+          React.createElement('form', { onSubmit:submit },
+
+            React.createElement(AdminFormInput,{
+              label:'Course Code', value:form.course_code, onChange:set('course_code'),
+              placeholder:'e.g. CSL601', required:true
+            }),
+            React.createElement(AdminFormInput,{
+              label:'Course Name', value:form.course_name, onChange:set('course_name'),
+              placeholder:'e.g. Advanced Databases', required:true
+            }),
+            React.createElement(AdminFormSelect,{
+              label:'Department', value:form.dept_id, onChange:set('dept_id'),
+              options:deptOptions, required:true
+            }),
+            React.createElement(AdminFormSelect,{
+              label:'Course Type', value:form.course_type, onChange:set('course_type'),
+              options:typeOptions, required:true
+            }),
+
+            // Credits + Semester row
+            React.createElement('div', { style:{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 } },
+              React.createElement(AdminFormInput,{
+                label:'Credits', value:form.credits, onChange:set('credits'),
+                type:'number', placeholder:'e.g. 4', required:true
+              }),
+              React.createElement(AdminFormSelect,{
+                label:'Typical Semester', value:form.typical_semester,
+                onChange:set('typical_semester'), options:semOptions
+              })
+            ),
+
+            // Hours row
+            React.createElement('div', { style:{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 } },
+              React.createElement(AdminFormInput,{
+                label:'Lecture Hrs', value:form.lecture_hours,
+                onChange:set('lecture_hours'), type:'number'
+              }),
+              React.createElement(AdminFormInput,{
+                label:'Tutorial Hrs', value:form.tutorial_hours,
+                onChange:set('tutorial_hours'), type:'number'
+              }),
+              React.createElement(AdminFormInput,{
+                label:'Practical Hrs', value:form.practical_hours,
+                onChange:v => setForm(f=>({...f, practical_hours:v})), type:'number'
+              })
+            ),
+
+            // Has Lab + Max Sections row
+            React.createElement('div', { style:{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 } },
+              React.createElement(AdminFormSelect,{
+                label:'Has Lab', value:form.has_lab, onChange:setHasLab,
+                options:labOptions, required:true
+              }),
+              React.createElement(AdminFormSelect,{
+                label:'Max Sections / Term', value:form.max_sections,
+                onChange:set('max_sections'), options:maxSecOpts, required:true
+              })
+            ),
+
+            React.createElement('div', { style:{
+              background:'rgba(79,124,255,0.08)', border:'1px solid rgba(79,124,255,0.2)',
+              borderRadius:8, padding:'8px 12px', marginBottom:16, fontSize:12, color:'var(--muted)'
+            }},
+              '📌 Max Sections: faculty cannot float more than this many sections for this course in any single term.'
+            ),
+
+            React.createElement(AdminFormInput,{
+              label:'Description (optional)', value:form.description,
+              onChange:set('description'), placeholder:'Short description of the course…'
+            }),
+
+            // ── Prerequisites Picker ────────────────────────────
+            React.createElement('div', { style:{ borderTop:'1px solid var(--border)', margin:'20px 0' } }),
+            React.createElement(PrerequisitePicker, {
+              allCourses:    existing || [],
+              prerequisites: prerequisites,
+              onChange:      setPrereqs,
+            }),
+
+            // ── Divider ────────────────────────────────────────
+            React.createElement('div', { style:{ borderTop:'1px solid var(--border)', margin:'20px 0' } }),
+
+            // ── Eligibility Rules Builder ──────────────────────
+            React.createElement(EligibilityRuleBuilder, {
+              rules:    eligibilityRules,
+              onChange: setRules,
+              depts:    depts,
+              programs: programs,
+            }),
+
+            React.createElement('div', { style:{ marginTop:20 } },
+              React.createElement('button', {
+                className:'btn btn-primary', type:'submit', disabled:loading
+              }, loading ? 'Creating…' : 'Create Course →')
+            )
+          )
+        )
+      ),
+
+      // ── Existing courses table ─────────────────────────────────
+      React.createElement('div', { className:'card' },
+        React.createElement('div', { className:'card-header' },
+          React.createElement('div', { className:'card-title' }, 'All Courses'),
+          React.createElement('div', { className:'card-sub' }, 'max_sections shown in the cap column')
+        ),
+        React.createElement('div', { className:'card-body', style:{ padding:0 } },
+          React.createElement('table', { className:'data-table' },
+            React.createElement('thead', null,
+              React.createElement('tr', null,
+                ['Code','Course','Dept','Credits','Type','Lab?','Cap','Active'].map(h =>
+                  React.createElement('th', { key:h }, h)
+                )
+              )
+            ),
+            React.createElement('tbody', null,
+              !(existing||[]).length
+                ? React.createElement('tr', null,
+                    React.createElement('td', { colSpan:8, style:{ textAlign:'center', color:'var(--muted)', padding:24 } }, 'No courses')
+                  )
+                : (existing||[]).map((c,i) =>
+                    React.createElement('tr', { key:i },
+                      React.createElement('td', null,
+                        React.createElement('span', { className:'mono', style:{ fontWeight:600 } }, c.course_code)
+                      ),
+                      React.createElement('td', null, c.course_name),
+                      React.createElement('td', null,
+                        React.createElement('span', { className:'mono', style:{ fontSize:11 } }, c.dept_code)
+                      ),
+                      React.createElement('td', null, c.credits),
+                      React.createElement('td', null,
+                        React.createElement(Badge, { type:'blue' }, c.course_type)
+                      ),
+                      React.createElement('td', null,
+                        React.createElement(Badge, { type: c.has_lab==='Y' ? 'yellow' : 'grey' },
+                          c.has_lab==='Y' ? 'Yes' : 'No'
+                        )
+                      ),
+                      React.createElement('td', null,
+                        React.createElement('span', {
+                          className:'mono',
+                          style:{
+                            fontWeight:600,
+                            color: c.max_active_sections_in_any_term >= c.max_sections
+                              ? 'var(--red)' : c.max_active_sections_in_any_term >= c.max_sections - 1
+                              ? 'var(--yellow)' : 'var(--green)'
+                          }
+                        }, `${c.max_active_sections_in_any_term||0}/${c.max_sections}`)
+                      ),
+                      React.createElement('td', null,
+                        React.createElement(Badge, { type: c.is_active==='Y' ? 'green' : 'grey' },
+                          c.is_active==='Y' ? 'Active' : 'Inactive'
+                        )
+                      )
+                    )
+                  )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — FLOAT COURSE OFFERING
+// ─────────────────────────────────────────────────────────────────
+function AdminFloatOffering() {
+  const { data: courses } = useData(() => apiFetch('/admin/courses'));
+  const { data: terms   } = useData(() => apiFetch('/admin/terms'));
+  const { data: slots   } = useData(() => apiFetch('/admin/slots'));
+  const { data: existing, reload: reloadOfferings } = useData(() => apiFetch('/admin/offerings'));
+  const [form, setForm] = useState({ course_id:'', term_id:'', theory_slot_id:'', lab_slot_id:'' });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  function set(k){ return v => setForm(f=>({...f,[k]:v})); }
+
+  const futurTerms   = (terms  ||[]).filter(t => t.term_status !== 'PAST' && t.term_status !== 'ACTIVE');
+  const theorySlots  = (slots  ||[]).filter(s => s.slot_type === 'THEORY');
+  const labSlots     = (slots  ||[]).filter(s => s.slot_type === 'LAB');
+
+  const courseOptions      = (courses||[]).filter(c=>c.is_active==='Y').map(c=>({value:c.course_id,label:`${c.course_code} — ${c.course_name}`}));
+  const termOptions        = futurTerms.map(t=>({value:t.term_id,label:`${t.term_name} (${t.academic_year}) · ${t.term_status}`}));
+  const theorySlotOptions  = theorySlots.map(s=>({value:s.slot_id,label:s.slot_code}));
+  const labSlotOptions     = labSlots.map(s=>({value:s.slot_id,label:s.slot_code}));
+
+  // Check if selected course has_lab
+  const selectedCourse = (courses||[]).find(c=>String(c.course_id)===String(form.course_id));
+  const needsLab = selectedCourse && selectedCourse.has_lab === 'Y';
+
+  async function submit(e) {
+    e.preventDefault(); setLoading(true); setMsg(null);
+    if (needsLab && !form.lab_slot_id) {
+      setMsg({type:'err',text:'This course has a lab — please select a lab slot.'}); setLoading(false); return;
+    }
+    try {
+      const res = await apiFetch('/admin/offerings', { method:'POST', body: JSON.stringify({
+        course_id:      Number(form.course_id),
+        term_id:        Number(form.term_id),
+        theory_slot_id: Number(form.theory_slot_id),
+        lab_slot_id:    form.lab_slot_id ? Number(form.lab_slot_id) : null,
+      })});
+      setMsg({ type:'ok', text: res.message });
+      setForm({ course_id:'', term_id:'', theory_slot_id:'', lab_slot_id:'' });
+      reloadOfferings();
+    } catch(e) { setMsg({ type:'err', text: e.message }); }
+    finally { setLoading(false); }
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', { className:'page-header' },
+      React.createElement('div', { className:'page-title' }, '📘 Float Course Offering'),
+      React.createElement('div', { className:'page-sub' }, 'Calls admin_manager.float_course_offering() — only future terms allowed')
+    ),
+
+    React.createElement('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'start'} },
+
+      // Form
+      React.createElement('div', { className:'card' },
+        React.createElement('div', { className:'card-header' },
+          React.createElement('div', { className:'card-title' }, 'New Offering')
+        ),
+        React.createElement('div', { className:'card-body' },
+          msg && React.createElement(AdminAlert, { type:msg.type, msg:msg.text }),
+          React.createElement('form', { onSubmit:submit },
+            React.createElement(AdminFormSelect,{label:'Course',value:form.course_id,onChange:set('course_id'),options:courseOptions,required:true}),
+            selectedCourse && React.createElement('div',{style:{
+              background:'rgba(79,124,255,0.08)',border:'1px solid rgba(79,124,255,0.2)',
+              borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13}},
+              React.createElement('span',{style:{color:'var(--muted)'}},'Credits: '),
+              React.createElement('strong',null,selectedCourse.credits),
+              React.createElement('span',{style:{color:'var(--muted)',marginLeft:16}},'Has Lab: '),
+              React.createElement('strong',{style:{color:needsLab?'var(--yellow)':'var(--muted)'}},
+                needsLab?'Yes — Lab slot required':'No'),
+              React.createElement('span',{style:{color:'var(--muted)',marginLeft:16}},'Type: '),
+              React.createElement('strong',null,selectedCourse.course_type)
+            ),
+            React.createElement(AdminFormSelect,{label:'Term (upcoming only)',value:form.term_id,onChange:set('term_id'),options:termOptions,required:true}),
+            futurTerms.length===0 && React.createElement('div',{style:{color:'var(--yellow)',fontSize:13,marginBottom:12}},
+              '⚠ No future terms available. Create a new term first.'),
+            React.createElement(AdminFormSelect,{label:'Theory Slot',value:form.theory_slot_id,onChange:set('theory_slot_id'),options:theorySlotOptions,required:true}),
+            React.createElement(AdminFormSelect,{label:`Lab Slot${needsLab?' (required)':' (optional)'}`,value:form.lab_slot_id,onChange:set('lab_slot_id'),options:labSlotOptions}),
+            React.createElement('div',{style:{marginTop:20}},
+              React.createElement('button',{className:'btn btn-primary',type:'submit',disabled:loading||futurTerms.length===0},
+                loading?'Creating…':'Float Offering →')
+            )
+          )
+        )
+      ),
+
+      // Existing offerings table
+      React.createElement('div', { className:'card' },
+        React.createElement('div', { className:'card-header' },
+          React.createElement('div', { className:'card-title' }, 'Current & Upcoming Offerings')
+        ),
+        React.createElement('div', { className:'card-body', style:{padding:0} },
+          React.createElement('table', { className:'data-table' },
+            React.createElement('thead',null,React.createElement('tr',null,
+              ['Course','Term','Slots','Sections','Enrolled'].map(h=>React.createElement('th',{key:h},h))
+            )),
+            React.createElement('tbody',null,
+              (existing||[]).length===0
+                ? React.createElement('tr',null,React.createElement('td',{colSpan:5,style:{textAlign:'center',color:'var(--muted)',padding:24}},'No offerings'))
+                : (existing||[]).map((o,i)=>
+                  React.createElement('tr',{key:i},
+                    React.createElement('td',null,
+                      React.createElement('span',{style:{fontWeight:600}},o.course_code),
+                      React.createElement('div',{style:{fontSize:11,color:'var(--muted)'}},o.course_name)
+                    ),
+                    React.createElement('td',null,
+                      React.createElement(Badge,{type:o.is_current==='Y'?'green':'blue'},o.term_name)
+                    ),
+                    React.createElement('td',null,
+                      React.createElement('code',{style:{fontSize:11}},o.theory_slot),
+                      o.lab_slot && React.createElement('span',{style:{color:'var(--muted)',fontSize:11}},'+'+o.lab_slot)
+                    ),
+                    React.createElement('td',null,o.section_count||0),
+                    React.createElement('td',null,o.total_enrolled||0)
+                  )
+                )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — TERMS MANAGEMENT
+// ─────────────────────────────────────────────────────────────────
+function AdminTerms() {
+  const { data: terms, loading, reload } = useData(() => apiFetch('/admin/terms'));
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({
+    term_code:'', term_name:'', academic_year:'', term_type:'ODD',
+    start_date:'', end_date:'', registration_start_date:'', registration_end_date:''
+  });
+  const [saving, setSaving] = useState(false);
+  const [setting, setSetting] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  function set(k){ return v => setForm(f=>({...f,[k]:v})); }
+
+  async function createTerm(e) {
+    e.preventDefault(); setSaving(true); setMsg(null);
+    try {
+      const res = await apiFetch('/admin/terms', { method:'POST', body: JSON.stringify(form) });
+      setMsg({ type:'ok', text: res.message });
+      setForm({ term_code:'', term_name:'', academic_year:'', term_type:'ODD',
+                start_date:'', end_date:'', registration_start_date:'', registration_end_date:'' });
+      setShowForm(false); reload();
+    } catch(e) { setMsg({ type:'err', text:e.message }); }
+    finally { setSaving(false); }
+  }
+
+  async function setCurrent(term_id) {
+    setSetting(term_id); setMsg(null);
+    try {
+      const res = await apiFetch(`/admin/terms/${term_id}/current`, { method:'PATCH' });
+      setMsg({ type:'ok', text: res.message }); reload();
+    } catch(e) { setMsg({ type:'err', text:e.message }); }
+    finally { setSetting(null); }
+  }
+
+  if (loading) return React.createElement(Spinner);
+
+  return React.createElement('div', null,
+    React.createElement('div', { className:'page-header', style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'} },
+      React.createElement('div', null,
+        React.createElement('div', { className:'page-title' }, '📅 Academic Terms'),
+        React.createElement('div', { className:'page-sub' }, 'Manage terms and registration windows')
+      ),
+      React.createElement('button', { className:'btn btn-primary', onClick:()=>setShowForm(s=>!s) },
+        showForm ? '✕ Cancel' : '⊕ New Term')
+    ),
+
+    msg && React.createElement(AdminAlert, { type:msg.type, msg:msg.text }),
+
+    showForm && React.createElement('div', { className:'card', style:{marginBottom:24} },
+      React.createElement('div', { className:'card-header' },
+        React.createElement('div', { className:'card-title' }, 'Create Academic Term')
+      ),
+      React.createElement('div', { className:'card-body' },
+        React.createElement('form', { onSubmit:createTerm },
+          React.createElement('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16} },
+            React.createElement(AdminFormInput,{label:'Term Code',value:form.term_code,onChange:set('term_code'),placeholder:'e.g. ODD-2026-27',required:true}),
+            React.createElement(AdminFormInput,{label:'Term Name',value:form.term_name,onChange:set('term_name'),placeholder:'e.g. ODD Semester 2026-27',required:true}),
+            React.createElement(AdminFormInput,{label:'Academic Year',value:form.academic_year,onChange:set('academic_year'),placeholder:'e.g. 2026-27',required:true}),
+            React.createElement('div',{className:'form-group'},
+              React.createElement('label',null,'Term Type',React.createElement('span',{style:{color:'var(--red)',marginLeft:4}},'*')),
+              React.createElement('select',{value:form.term_type,onChange:e=>setForm(f=>({...f,term_type:e.target.value})),required:true,
+                style:{width:'100%',padding:'10px 12px',background:'var(--surface2)',border:'1px solid var(--border)',
+                       borderRadius:8,color:'var(--text)',fontFamily:'var(--font)',fontSize:14}},
+                ['ODD','EVEN','SUMMER'].map(t=>React.createElement('option',{key:t,value:t},t))
+              )
+            ),
+            React.createElement(AdminFormInput,{label:'Start Date',value:form.start_date,onChange:set('start_date'),type:'date',required:true}),
+            React.createElement(AdminFormInput,{label:'End Date',value:form.end_date,onChange:set('end_date'),type:'date',required:true}),
+            React.createElement(AdminFormInput,{label:'Registration Opens',value:form.registration_start_date,onChange:set('registration_start_date'),type:'date',required:true}),
+            React.createElement(AdminFormInput,{label:'Registration Closes',value:form.registration_end_date,onChange:set('registration_end_date'),type:'date',required:true}),
+          ),
+          React.createElement('div',{style:{marginTop:20}},
+            React.createElement('button',{className:'btn btn-primary',type:'submit',disabled:saving},
+              saving?'Creating…':'Create Term →')
+          )
+        )
+      )
+    ),
+
+    React.createElement('div', { className:'card' },
+      React.createElement('div', { className:'card-body', style:{padding:0} },
+        React.createElement('table', { className:'data-table' },
+          React.createElement('thead',null,React.createElement('tr',null,
+            ['Term Code','Name','Year','Type','Dates','Reg Window','Status','Action'].map(h=>
+              React.createElement('th',{key:h},h))
+          )),
+          React.createElement('tbody',null,
+            (terms||[]).map((t,i)=>
+              React.createElement('tr',{key:i},
+                React.createElement('td',null,React.createElement('code',{style:{fontSize:12}},t.term_code)),
+                React.createElement('td',null,t.term_name),
+                React.createElement('td',null,t.academic_year),
+                React.createElement('td',null,React.createElement(Badge,{type:'blue'},t.term_type)),
+                React.createElement('td',null,
+                  React.createElement('span',{style:{fontSize:11,color:'var(--muted)'}},
+                    (t.start_date?new Date(t.start_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'?'),
+                    ' → ',
+                    (t.end_date?new Date(t.end_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'?')
+                  )
+                ),
+                React.createElement('td',null,
+                  React.createElement('span',{style:{fontSize:11,color:'var(--muted)'}},
+                    (t.registration_start_date?new Date(t.registration_start_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}):'?'),
+                    ' – ',
+                    (t.registration_end_date?new Date(t.registration_end_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}):'?')
+                  )
+                ),
+                React.createElement('td',null,
+                  React.createElement(Badge,{
+                    type:t.term_status==='ACTIVE'?'green':t.term_status==='REG_OPEN'?'yellow':t.term_status==='UPCOMING'?'blue':'gray'
+                  },t.term_status)
+                ),
+                React.createElement('td',null,
+                  t.is_current==='Y'
+                    ? React.createElement('span',{style:{fontSize:11,color:'var(--green)',fontWeight:600}},'✓ Current')
+                    : React.createElement('button',{
+                        className:'btn btn-sm',
+                        style:{fontSize:11,padding:'4px 10px'},
+                        disabled:setting===t.term_id,
+                        onClick:()=>setCurrent(t.term_id)
+                      }, setting===t.term_id?'…':'Set Current')
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ROOT APP  (updated with admin routing)
+// ─────────────────────────────────────────────────────────────────
+function App() {
+  const [auth] = useAuth();
+  const [page, setPage] = useState('dashboard');
+
+  if (!auth) return React.createElement(LoginPage);
+
+  const studentPages = {
+    dashboard:    () => React.createElement(StudentDashboard, { auth }),
+    registration: () => React.createElement(CourseRegistration),
+    attendance:   () => React.createElement(AttendancePage),
+    timetable:    () => React.createElement(TimetablePage),
+  };
+  const facultyPages = {
+    dashboard:         () => React.createElement(FacultyDashboard, { auth }),
+    sections:          () => React.createElement(SectionsPage),
+    'float-section':   () => React.createElement(FloatSectionPage),
+    'attendance-mgmt': () => React.createElement(AttendanceMgmt),
+    schedule:          () => React.createElement(SchedulePage),
+    reports:           () => React.createElement(ReportsPage),
+  };
+  const adminPages = {
+    dashboard:          () => React.createElement(AdminDashboard, { auth }),
+    students:           () => React.createElement(AdminStudents),
+    'register-student': () => React.createElement(AdminRegisterStudent),
+    faculty:            () => React.createElement(AdminFaculty),
+    'register-faculty': () => React.createElement(AdminRegisterFaculty),
+    'create-course':    () => React.createElement(AdminCreateCourse),
+    offerings:          () => React.createElement(AdminFloatOffering),
+    terms:              () => React.createElement(AdminTerms),
+  };
+
+  const pages =
+    auth.role === 'student' ? studentPages :
+    auth.role === 'faculty' ? facultyPages :
+    adminPages;
+
+  const sidebarPages =
+    auth.role === 'student' ? STUDENT_PAGES :
+    auth.role === 'faculty' ? FACULTY_PAGES :
+    ADMIN_PAGES;
+
+  const PageComponent = pages[page] || pages['dashboard'];
+
+  return React.createElement('div', { className: 'app-shell' },
+    React.createElement(Sidebar, { auth, page, setPage, pages: sidebarPages }),
+    React.createElement('main', { className: 'main-content' },
+      React.createElement(PageComponent)
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
