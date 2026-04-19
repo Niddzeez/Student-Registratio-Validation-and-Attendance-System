@@ -190,14 +190,20 @@ def get_timetable(user: dict = Depends(require_student)):
 @router.get("/attendance")
 def get_attendance_summary(user: dict = Depends(require_student)):
     return query_many(
-        """SELECT student_id, roll_number, student_name,
-                  registration_id, registration_status,
-                  course_code, course_name, credits,
-                  section_code, term_name, academic_year,
-                  theory_attendance, lab_attendance, overall_attendance
-             FROM student_course_overview
-            WHERE student_id = :sid
-            ORDER BY academic_year DESC, course_name""",
+        """
+        SELECT sco.student_id, sco.roll_number, sco.student_name,
+               sco.registration_id, sco.registration_status,
+               sco.course_code, sco.course_name, sco.credits,
+               sco.section_code, sco.term_name, sco.academic_year,
+               sco.theory_attendance, sco.lab_attendance, sco.overall_attendance
+        FROM student_course_overview sco
+        JOIN registrations r  ON sco.registration_id = r.registration_id
+        JOIN academic_terms t ON r.term_id = t.term_id
+        WHERE sco.student_id = :sid
+          AND t.start_date <= SYSDATE
+          AND r.registration_status IN ('REGISTERED','APPROVED','COMPLETED')
+        ORDER BY t.start_date DESC, sco.course_name
+        """,
         {"sid": user["id"]},
     )
 
@@ -212,23 +218,25 @@ def get_attendance_history(registration_id: int, user: dict = Depends(require_st
         raise HTTPException(status_code=403, detail="Access denied")
 
     return query_many(
-        """SELECT cs.class_date, cs.class_type, sl.slot_code,
-                  cs.topic, cs.room_number,
-                  NVL(a.status, 'NOT_MARKED') AS status,
-                  a.remarks,
-                  f.first_name || ' ' || NVL(f.last_name, '') AS marked_by
-             FROM registrations r
-             JOIN class_schedule cs  ON cs.section_id = r.section_id
-             JOIN slots sl           ON cs.slot_id    = sl.slot_id
-             LEFT JOIN attendance a  ON a.registration_id = r.registration_id
-                                    AND a.schedule_id    = cs.schedule_id
-             LEFT JOIN faculty f     ON a.marked_by = f.faculty_id
-            WHERE r.registration_id = :rid
-              AND cs.is_cancelled   = 'N'
-            ORDER BY cs.class_date DESC, cs.class_type""",
+        """
+        SELECT cs.class_date, cs.class_type, sl.slot_code,
+               cs.topic, cs.room_number,
+               NVL(a.status, 'NOT_MARKED') AS status,
+               a.remarks,
+               f.first_name || ' ' || NVL(f.last_name, '') AS marked_by
+        FROM registrations r
+        JOIN class_schedule cs  ON cs.section_id = r.section_id
+        JOIN slots sl           ON cs.slot_id    = sl.slot_id
+        LEFT JOIN attendance a  ON a.registration_id = r.registration_id
+                               AND a.schedule_id    = cs.schedule_id
+        LEFT JOIN faculty f     ON a.marked_by = f.faculty_id
+        WHERE r.registration_id = :rid
+          AND cs.is_cancelled   = 'N'
+          AND cs.class_date <= SYSDATE
+        ORDER BY cs.class_date DESC, cs.class_type
+        """,
         {"rid": registration_id},
     )
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Available Sections

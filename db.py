@@ -13,8 +13,8 @@ _pool: oracledb.ConnectionPool | None = None
 def init_pool():
     global _pool
     _pool = oracledb.create_pool(
-        user="veni",
-        password="veni123",
+        user="nidhi",
+        password="nidhi123",
         dsn= "localhost:1521/XEPDB1",
         min=2,
         max=10,

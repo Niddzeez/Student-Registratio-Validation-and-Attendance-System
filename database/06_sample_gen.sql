@@ -24,7 +24,6 @@
 -- ============================================================================
 
 SET DEFINE OFF;
-SET BLANKLINES ON;
 
 -- ── Wipe all tables in dependency order ─────────────────────────────────────
 TRUNCATE TABLE attendance;
