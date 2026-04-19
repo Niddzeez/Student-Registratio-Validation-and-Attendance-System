@@ -1432,24 +1432,6 @@ function SchedulePage() {
                 placeholder:'Slot ID'
               })
         ),
-        // FIX: class type auto-derived from slot selection; still shown as read-only context
-        React.createElement('div',{className:'form-group'},
-          React.createElement('label',null,'Class Type'),
-          React.createElement('select',{
-            value:form.class_type,
-            onChange:e=>setForm(f=>({...f,class_type:e.target.value}))
-          },
-            React.createElement('option',{value:'THEORY'},'Theory'),
-            React.createElement('option',{value:'LAB'},'Lab'),
-          )
-        ),
-        React.createElement('div',{className:'form-group'},
-          React.createElement('label',null,'Lecture #'),
-          React.createElement('input',{
-            type:'number', min:1, value:form.lecture_number,
-            onChange:e=>setForm(f=>({...f,lecture_number:e.target.value}))
-          })
-        ),
         React.createElement('div',{className:'form-group'},
           React.createElement('label',null,'Topic (optional)'),
           React.createElement('input',{

@@ -412,9 +412,10 @@ class CreateSessionRequest(BaseModel):
     class_date:      str          # "YYYY-MM-DD"
     slot_id:         int
     class_type:      str          # "THEORY" | "LAB"
-    lecture_number:  int = 1
     topic:           Optional[str] = None
     room_number:     Optional[str] = None
+
+
 
 
 @router.post("/sessions")
@@ -429,6 +430,21 @@ def create_session(req: CreateSessionRequest, user: dict = Depends(require_facul
             WHERE sec.section_id = :sid""",
         {"sid": req.section_id},
     )
+    lecture = query_one(
+        """
+        SELECT NVL(MAX(lecture_number), 0) + 1 AS next_lecture
+        FROM class_schedule
+        WHERE section_id = :sid
+        AND class_type = :ctype
+        AND is_cancelled = 'N'
+        """,
+        {
+            "sid": req.section_id,
+            "ctype": req.class_type
+        },
+    )
+
+    next_lecture = lecture["next_lecture"] if lecture else 1
     if not term_check or term_check["is_current"] != "Y":
         raise HTTPException(
             status_code=400,
@@ -466,7 +482,7 @@ def create_session(req: CreateSessionRequest, user: dict = Depends(require_facul
                 "p_class_date":     req.class_date,
                 "p_slot_id":        req.slot_id,
                 "p_class_type":     req.class_type,
-                "p_lecture_number": req.lecture_number,
+                "p_lecture_number": next_lecture,
                 "p_topic":          req.topic,
                 "p_conducted_by":   user["id"],
                 "p_room_number":    req.room_number,
